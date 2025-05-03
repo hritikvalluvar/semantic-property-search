@@ -67,6 +67,8 @@ export class MemStorage implements IStorage {
       this.loadMockPropertyData();
       return;
     }
+    
+    console.log(`Loading property data from CSV: ${csvFilePath}`);
 
     // Parse CSV
     const parser = fs
@@ -136,10 +138,14 @@ export class MemStorage implements IStorage {
     // Upsert vectors into Pinecone
     if (validEmbeddings.length > 0) {
       try {
+        console.log(`Upserting ${validEmbeddings.length} vectors into Pinecone index`);
         await upsertVectors(validEmbeddings);
+        console.log(`Successfully upserted vectors into Pinecone index`);
       } catch (error) {
         console.error("Error upserting vectors into Pinecone:", error);
       }
+    } else {
+      console.log('No new embeddings to upsert into Pinecone');
     }
   }
   
