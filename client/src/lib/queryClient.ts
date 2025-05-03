@@ -7,12 +7,21 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Get the base URL for API requests that works in both development and production
+const getApiBaseUrl = () => {
+  // In production (Vercel), API requests use relative paths
+  return '';
+};
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  // Ensure URL is properly formatted with base URL
+  const apiUrl = url.startsWith('/') ? `${getApiBaseUrl()}${url}` : url;
+  
+  const res = await fetch(apiUrl, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -29,7 +38,11 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    // Format URL with base API URL if it's a string path
+    const queryKeyUrl = queryKey[0] as string;
+    const apiUrl = queryKeyUrl.startsWith('/') ? `${getApiBaseUrl()}${queryKeyUrl}` : queryKeyUrl;
+    
+    const res = await fetch(apiUrl, {
       credentials: "include",
     });
 
