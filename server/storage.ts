@@ -79,7 +79,7 @@ export class MemStorage implements IStorage {
       }));
 
     const properties: Property[] = [];
-    const embeddingPromises: Promise<void>[] = [];
+    const embeddingPromises: Promise<PropertyEmbedding | null>[] = [];
     
     // Process each row
     for await (const row of parser) {
@@ -133,7 +133,7 @@ export class MemStorage implements IStorage {
     
     // Wait for all embedding promises to resolve
     const embeddings = await Promise.all(embeddingPromises);
-    const validEmbeddings = embeddings.filter(e => e !== null) as PropertyEmbedding[];
+    const validEmbeddings = embeddings.filter((e): e is PropertyEmbedding => e !== null);
     
     // Upsert vectors into Pinecone
     if (validEmbeddings.length > 0) {
