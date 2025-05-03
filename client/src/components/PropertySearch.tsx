@@ -51,22 +51,44 @@ export function PropertySearch() {
     }
   }, [filterData]);
 
+  // API Key state
+  const [apiKeyError, setApiKeyError] = useState<{missing: boolean; key: string} | null>(null);
+
   // Search mutation
   const { mutate: searchProperties, isPending: isSearching } = useMutation({
     mutationFn: async (query: string) => {
       const response = await apiRequest('POST', '/api/property/search', { query });
-      return response.json();
+      const data = await response.json();
+      
+      // Check if we have an API key error
+      if (response.status === 503 && data.missingKey) {
+        throw new Error(data.message, { cause: { missingKey: data.missingKey } });
+      }
+      
+      return data;
     },
     onSuccess: (data: SearchResult[]) => {
+      setApiKeyError(null); // Clear any previous API key errors
       setSearchResults(data);
       applyFilters(data);
     },
-    onError: (error) => {
-      toast({
-        title: "Search failed",
-        description: error.message,
-        variant: "destructive"
-      });
+    onError: (error: any) => {
+      console.error("Search error:", error);
+      
+      // Check if this is an API key error
+      if (error.cause?.missingKey) {
+        setApiKeyError({
+          missing: true,
+          key: error.cause.missingKey
+        });
+      } else {
+        // Regular error toast
+        toast({
+          title: "Search failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
     }
   });
 
@@ -272,6 +294,26 @@ export function PropertySearch() {
               </div>
             </div>
           </div>
+
+          {/* API Key Error Alert */}
+          {apiKeyError && (
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-4 rounded-md">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-amber-800">API Key Missing</h3>
+                  <div className="mt-2 text-sm text-amber-700">
+                    <p>The application requires a valid {apiKeyError.key === 'OPENAI_API_KEY' ? 'OpenAI' : 'Pinecone'} API key to function properly.</p>
+                    <p className="mt-2">Please provide a valid API key in the environment variables.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Results section */}
           <PropertyResults
