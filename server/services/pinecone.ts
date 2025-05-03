@@ -1,11 +1,18 @@
 import { Pinecone } from "@pinecone-database/pinecone";
 import { PropertyEmbedding } from "@shared/schema";
 
+// Check for API key
+const apiKey = process.env.PINECONE_API_KEY;
+if (!apiKey) {
+  console.warn('Warning: PINECONE_API_KEY environment variable is not set. Pinecone vector search will not work.');
+}
+
 // Initialize Pinecone client
 const pc = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY || ''
+  apiKey: apiKey || ''
 });
 
+// Get index name from environment or use default
 const INDEX_NAME = process.env.PINECONE_INDEX_NAME || 'property-listings-index';
 const index = pc.Index(INDEX_NAME);
 

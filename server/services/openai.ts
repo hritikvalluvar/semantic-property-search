@@ -1,8 +1,14 @@
 import OpenAI from "openai";
 
+// Check if we have the API key
+const apiKey = process.env.OPENAI_API_KEY;
+if (!apiKey) {
+  console.warn('Warning: OPENAI_API_KEY environment variable is not set. OpenAI embeddings will not work.');
+}
+
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || ''
+  apiKey: apiKey || ''
 });
 
 /**

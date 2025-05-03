@@ -57,12 +57,16 @@ export class MemStorage implements IStorage {
       return;
     }
 
-    // Path to CSV file
+    // Check for production or development environment
+    const isProd = process.env.NODE_ENV === 'production';
+    
+    // Path to CSV file - for production, we'll use mock data
+    // In Vercel serverless functions, file system access is limited, so we use mock data in production
     const csvFilePath = path.resolve(process.cwd(), 'semantic_property_listings.csv');
 
-    // Check if file exists
-    if (!fs.existsSync(csvFilePath)) {
-      console.log(`CSV file not found at ${csvFilePath}, loading mock data`);
+    // In production or if file doesn't exist, use mock data
+    if (isProd || !fs.existsSync(csvFilePath)) {
+      console.log(`Using mock data (Production: ${isProd}, File exists: ${fs.existsSync(csvFilePath)})`);
       // Load mock data instead
       this.loadMockPropertyData();
       return;

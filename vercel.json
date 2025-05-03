@@ -1,25 +1,30 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "framework": "vite",
+  "buildCommand": "vite build",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "dest": "/api"
     },
     {
       "handle": "filesystem"
     },
     {
-      "src": "/.*",
+      "src": "/(.*)",
       "dest": "/index.html"
     }
   ],
+  "env": {
+    "OPENAI_API_KEY": "@openai_api_key",
+    "PINECONE_API_KEY": "@pinecone_api_key",
+    "PINECONE_INDEX_NAME": "property-listings-index"
+  },
   "functions": {
-    "api/**/*.js": {
+    "api/index.js": {
       "memory": 1024,
-      "maxDuration": 10
+      "maxDuration": 30
     }
   }
 }

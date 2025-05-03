@@ -25,35 +25,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search properties with embeddings
   apiRouter.post("/property/search", async (req: Request, res: Response) => {
     try {
+      // Check for API keys
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(503).json({ 
+          message: "OpenAI API key is missing. Please set the OPENAI_API_KEY environment variable.",
+          missingKey: "OPENAI_API_KEY" 
+        });
+      }
+      
+      if (!process.env.PINECONE_API_KEY) {
+        return res.status(503).json({ 
+          message: "Pinecone API key is missing. Please set the PINECONE_API_KEY environment variable.",
+          missingKey: "PINECONE_API_KEY" 
+        });
+      }
+
       const searchSchema = z.object({
         query: z.string().min(1),
       });
       
       const validatedData = searchSchema.parse(req.body);
       const { query } = validatedData;
-      
-      // Generate embedding for query
-      const queryEmbedding = await getEmbedding(query);
-      
-      // Search Pinecone
-      const searchResults = await searchVectors(queryEmbedding);
-      
-      // Get full property details
-      const properties = await storage.getPropertiesByIds(searchResults.map(r => r.id));
-      
-      // Combine search results with property data
-      const results = searchResults.map(result => {
-        const property = properties.find(p => p.id.toString() === result.id);
-        return {
-          ...property,
-          score: result.score
-        };
-      }).filter(item => item.id !== undefined);
-      
-      res.json(results);
+
+      try {
+        // Generate embedding for query
+        const queryEmbedding = await getEmbedding(query);
+        
+        // Search Pinecone
+        const searchResults = await searchVectors(queryEmbedding);
+        
+        // Get full property details
+        const properties = await storage.getPropertiesByIds(searchResults.map(r => r.id));
+        
+        // Combine search results with property data
+        const results = searchResults.map(result => {
+          const property = properties.find(p => p.id.toString() === result.id);
+          return {
+            ...property,
+            score: result.score
+          };
+        }).filter(item => item.id !== undefined);
+        
+        res.json(results);
+      } catch (error: any) {
+        // Handle specific API errors
+        const errorMessage = error.message || "";
+        
+        if (errorMessage.includes('API key') || errorMessage.includes('invalid_api_key')) {
+          if (errorMessage.toLowerCase().includes('openai')) {
+            return res.status(503).json({ 
+              message: "There was an issue with the OpenAI API key. Please check your API key is valid.",
+              missingKey: "OPENAI_API_KEY"
+            });
+          }
+          
+          if (errorMessage.toLowerCase().includes('pinecone')) {
+            return res.status(503).json({ 
+              message: "There was an issue with the Pinecone API. Please check your API key is valid.",
+              missingKey: "PINECONE_API_KEY"
+            });
+          }
+        }
+        
+        // Re-throw for general error handling
+        throw error;
+      }
     } catch (error: any) {
       console.error("Search error:", error);
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ 
+        message: "An error occurred during search. Please try again later.",
+        error: error.message
+      });
     }
   });
   
