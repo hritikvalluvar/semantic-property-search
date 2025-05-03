@@ -1,0 +1,112 @@
+import streamlit as st
+import openai
+from pinecone import Pinecone
+import pandas as pd
+
+# Initialize OpenAI client
+client = openai.OpenAI(api_key='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')
+
+# Initialize Pinecone client
+pc = Pinecone(api_key='pcsk_2PHjhp_6kXVGU5i82WMavZHqVRzbQVXs7UcTasxh9PDtfXvRSPCPfcxLR3QRcFaCC1QqB7')
+index_name = 'property-listings-index'
+index = pc.Index(index_name)
+
+# Load CSV data
+df = pd.read_csv('semantic_property_listings.csv')
+df['id'] = df['id'].astype(str)
+df.set_index('id', inplace=True)
+
+st.title("🏡 Semantic Property Search")
+st.write("Search for your ideal property using natural language.")
+
+# Filters (MOVED UP to avoid NameError)
+st.sidebar.header("🔧 Filters")
+type_filter = st.sidebar.multiselect("Type", options=df['type'].unique())
+style_filter = st.sidebar.multiselect("Style", options=df['style'].unique())
+location_filter = st.sidebar.multiselect("Location", options=df['location'].unique())
+bedrooms_filter = st.sidebar.slider("Bedrooms", int(df['bedrooms'].min()), int(df['bedrooms'].max()), (int(df['bedrooms'].min()), int(df['bedrooms'].max())))
+bathrooms_filter = st.sidebar.slider("Bathrooms", int(df['bathrooms'].min()), int(df['bathrooms'].max()), (int(df['bathrooms'].min()), int(df['bathrooms'].max())))
+price_filter = st.sidebar.slider("Price", int(df['price'].min()), int(df['price'].max()), (int(df['price'].min()), int(df['price'].max())))
+view_filter = st.sidebar.multiselect("View", options=df['view'].unique())
+furnishing_filter = st.sidebar.multiselect("Furnishing", options=df['furnishing'].unique())
+
+# Initialize session state for query_text if it doesn't exist
+if 'query_text' not in st.session_state:
+    st.session_state.query_text = "A nice, simple house near park"
+
+# Create columns for search and sample searches
+col1, col2 = st.columns([4, 2])
+
+with col1:
+    # User input
+    query_text = st.text_input("Enter your search query:", value=st.session_state.query_text, key='query_input')
+
+    # Search Button below the search bar
+    if st.button("Search"):
+        with st.spinner("Searching..."):
+            response = client.embeddings.create(
+                input=[st.session_state.query_text],
+                model='text-embedding-ada-002'
+            )
+            query_embedding = response.data[0].embedding
+
+            result = index.query(
+                vector=query_embedding,
+                top_k=20,
+                include_metadata=False
+            )
+
+            matches = []
+            for match in result['matches']:
+                listing_id = match['id']
+                listing = df.loc[listing_id]
+
+                if type_filter and listing['type'] not in type_filter:
+                    continue
+                if style_filter and listing['style'] not in style_filter:
+                    continue
+                if location_filter and listing['location'] not in location_filter:
+                    continue
+                if not (bedrooms_filter[0] <= listing['bedrooms'] <= bedrooms_filter[1]):
+                    continue
+                if not (bathrooms_filter[0] <= listing['bathrooms'] <= bathrooms_filter[1]):
+                    continue
+                if not (price_filter[0] <= listing['price'] <= price_filter[1]):
+                    continue
+                if view_filter and listing['view'] not in view_filter:
+                    continue
+                if furnishing_filter and listing['furnishing'] not in furnishing_filter:
+                    continue
+
+                matches.append((match['score'], listing))
+
+            st.subheader("🔍 Top Matching Listings (After Filters)")
+            if matches:
+                matches = sorted(matches, key=lambda x: -x[0])[:5]
+                for score, listing in matches:
+                    st.markdown(f"### {listing['title']}")
+                    st.write(f"**Location:** {listing['location']}")
+                    st.write(f"**Price:** {listing['price']}")
+                    st.write(f"**Score:** {score:.4f}")
+                    st.write(f"**Description:** {listing['description']}")
+                    st.write("---")
+            else:
+                st.write("No listings matched your filters.")
+
+with col2:
+    st.subheader("🔍 Sample Searches")
+    sample_queries = [
+        "A modern 4-bedroom house with a park view",
+        "Find me a Victorian flat in Wimbledon",
+        "Looking for a 5-bedroom bungalow near a river",
+        "A cozy townhouse with city views and 3 bedrooms",
+        "Show me a furnished property with a garden view",
+        "Search for a contemporary flat with 2 bathrooms and no view",
+        "A large house with 4 bedrooms in Canary Wharf",
+        "Affordable 2-bedroom flat in Richmond with a garden view"
+    ]
+
+    for query in sample_queries:
+        if st.button(query, key=query):
+            st.session_state.query_text = query
+            st.experimental_rerun()
