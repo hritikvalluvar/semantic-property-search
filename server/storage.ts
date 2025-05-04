@@ -308,6 +308,110 @@ export class MemStorage implements IStorage {
       .map(id => this.properties.get(id))
       .filter(p => p !== undefined) as Property[];
   }
+  
+  /**
+   * Pre-generate images for all properties to avoid on-demand generation
+   */
+  private async preGeneratePropertyImages(): Promise<void> {
+    try {
+      // Import necessary functions from image-generation service
+      const { generatePropertyImage, getExistingPropertyImage } = await import('./services/image-generation');
+      
+      // Create images directory if it doesn't exist
+      const imagesDir = path.join(process.cwd(), "client", "public", "generated-images");
+      if (!fs.existsSync(imagesDir)) {
+        fs.mkdirSync(imagesDir, { recursive: true });
+      }
+      
+      // Get all properties
+      const properties = Array.from(this.properties.values());
+      console.log(`Pre-generating images for ${properties.length} properties...`);
+      
+      // Create a preset directory to store type-based images
+      const presetImagesDir = path.join(process.cwd(), "client", "public", "preset-images");
+      if (!fs.existsSync(presetImagesDir)) {
+        fs.mkdirSync(presetImagesDir, { recursive: true });
+      }
+      
+      // Map to track image generation by property type
+      const propertyTypeImages = new Map<string, string>();
+      
+      // Generate or use existing images for all properties
+      let generatedCount = 0;
+      let existingCount = 0;
+      let errorCount = 0;
+      
+      // Process each property - limit to 10 actual generations to avoid rate limits
+      for (const property of properties) {
+        try {
+          // Check if image already exists
+          const existingImage = getExistingPropertyImage(property.id);
+          if (existingImage) {
+            console.log(`Image already exists for property ${property.id}: ${existingImage}`);
+            existingCount++;
+            continue;
+          }
+          
+          // Check if we've already generated an image for this property type
+          const propertyType = property.type;
+          let filename: string;
+          
+          if (propertyTypeImages.has(propertyType) && generatedCount >= 10) {
+            // Use the existing image for this property type
+            const sourceFilename = propertyTypeImages.get(propertyType)!;
+            const sourceFilePath = path.join(imagesDir, sourceFilename);
+            
+            // Create a new filename for this property
+            filename = `property-${property.id}-${Date.now()}.png`;
+            const targetFilePath = path.join(imagesDir, filename);
+            
+            // Copy the file
+            fs.copyFileSync(sourceFilePath, targetFilePath);
+            console.log(`Reused image of type ${propertyType} for property ${property.id}`);
+          } else if (generatedCount < 10) {
+            // Generate a new image for this property (limited to 10 generations)
+            const result = await generatePropertyImage(property);
+            filename = result.filename;
+            
+            // Remember this image for this property type
+            propertyTypeImages.set(propertyType, filename);
+            generatedCount++;
+            
+            console.log(`Generated image for property ${property.id} (${generatedCount}/10 generated)`);
+          } else {
+            // Create a simple placeholder file with property information
+            filename = `property-${property.id}-${Date.now()}.png`;
+            const placeholderPath = path.join(imagesDir, filename);
+            
+            // Since we can't use canvas in Node.js without additional packages,
+            // we'll create a simple placeholder text file
+            const placeholderText = 
+              `Property Placeholder\n` +
+              `ID: ${property.id}\n` +
+              `Type: ${property.type}\n` +
+              `Location: ${property.location}\n` +
+              `This is a placeholder image until actual property images are generated.`;
+            
+            fs.writeFileSync(placeholderPath, placeholderText);
+            
+            console.log(`Created placeholder file for property ${property.id}`);
+          }
+        } catch (error) {
+          console.error(`Error generating image for property ${property.id}:`, error);
+          errorCount++;
+        }
+      }
+      
+      console.log(`Image pre-generation complete:`);
+      console.log(`- Generated: ${generatedCount}`);
+      console.log(`- Existing: ${existingCount}`);
+      console.log(`- Errors: ${errorCount}`);
+      console.log(`- Total properties: ${properties.length}`);
+      
+    } catch (error) {
+      console.error('Error in preGeneratePropertyImages:', error);
+    }
+  }
 
   /**
    * Expand property dataset to create 125 properties total
@@ -461,84 +565,7 @@ export class MemStorage implements IStorage {
     await this.preGeneratePropertyImages();
   }
   
-  /**
-   * Pre-generate property images for all properties
-   */
-  private async preGeneratePropertyImages(): Promise<void> {
-    try {
-      // Import image generation service
-      const { createPropertyPrompt } = await import('./services/image-generation');
-      const fs = await import('fs');
-      const path = await import('path');
-      
-      // Create images directory
-      const imagesDir = path.default.join(process.cwd(), "client", "public", "generated-images");
-      if (!fs.default.existsSync(imagesDir)) {
-        fs.default.mkdirSync(imagesDir, { recursive: true });
-      }
-      
-      // For each property, generate or copy a preset image
-      const properties = Array.from(this.properties.values());
-      console.log(`Pre-generating images for ${properties.length} properties`);
-      
-      // We'll create a fixed set of pre-generated images that we'll assign to properties
-      // This is to work within OpenAI API rate limits
-      const propertyTypeImages: Record<string, string> = {
-        'House': '/preset-house.jpg',
-        'Flat': '/preset-flat.jpg',
-        'Bungalow': '/preset-bungalow.jpg',
-        'Penthouse': '/preset-penthouse.jpg',
-        'Townhouse': '/preset-townhouse.jpg',
-        'Studio': '/preset-studio.jpg',
-        'Cottage': '/preset-cottage.jpg',
-        'Duplex': '/preset-duplex.jpg',
-        'Mansion': '/preset-mansion.jpg'
-      };
-      
-      // Copy preset images to generated-images directory
-      for (const [type, imagePath] of Object.entries(propertyTypeImages)) {
-        const sourceImagePath = path.default.join(process.cwd(), "client", "public", "preset-images", imagePath);
-        // If source exists, make sure we copy it (but in real use, we'd pre-create these images)
-        try {
-          if (!fs.default.existsSync(sourceImagePath)) {
-            continue;
-          }
-          const destImagePath = path.default.join(imagesDir, `preset-${type.toLowerCase()}.jpg`);
-          fs.default.copyFileSync(sourceImagePath, destImagePath);
-        } catch (error) {
-          console.error(`Error copying preset image for ${type}: ${error}`);
-        }
-      }
-      
-      // Assign images to properties based on type
-      for (const property of properties) {
-        const propertyType = property.type;
-        const filename = `property-${property.id}-${Date.now()}.jpg`;
-        const filepath = path.default.join(imagesDir, filename);
-        
-        // Use a preset image based on property type
-        const presetImagePath = path.default.join(imagesDir, `preset-${propertyType.toLowerCase()}.jpg`);
-        
-        try {
-          // If the preset image exists, copy it as this property's image
-          if (fs.default.existsSync(presetImagePath)) {
-            fs.default.copyFileSync(presetImagePath, filepath);
-            console.log(`Created image for property ${property.id} using preset for ${propertyType}`);
-          } else {
-            // Create a placeholder file
-            fs.default.writeFileSync(filepath, 'Property Image Placeholder');
-            console.log(`Created placeholder image for property ${property.id}`);
-          }
-        } catch (error) {
-          console.error(`Error creating image for property ${property.id}: ${error}`);
-        }
-      }
-      
-      console.log('Completed pre-generating property images');
-    } catch (error) {
-      console.error('Error pre-generating property images:', error);
-    }
-  }
+
 }
 
 export const storage = new MemStorage();
