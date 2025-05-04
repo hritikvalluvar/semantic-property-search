@@ -27,7 +27,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             )}
           </div>
           <Badge variant="outline" className="bg-primary/10 text-primary border-primary/40 px-2 py-1">
-            Match score: {(property.score * 100).toFixed(1)}%
+            Match score: {Math.round(property.score)}%
           </Badge>
         </div>
         

@@ -138,8 +138,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Sort by score
         results.sort((a, b) => b.score - a.score);
         
-        // Return top 20 results
-        res.json(results.slice(0, 20));
+        // Normalize scores to 0-100 range
+        const topResults = results.slice(0, 20);
+        if (topResults.length > 0) {
+          // Find max and min scores
+          const maxScore = Math.max(...topResults.map(r => r.score));
+          const minScore = Math.min(...topResults.map(r => r.score));
+          const scoreRange = maxScore - minScore;
+          
+          // Normalize scores
+          if (scoreRange > 0) {
+            topResults.forEach(result => {
+              // Convert to 0-100 scale and round to 2 decimal places
+              result.score = Math.min(100, Math.max(0, 
+                Math.round(((result.score - minScore) / scoreRange) * 100 * 100) / 100
+              ));
+            });
+          } else {
+            // If all scores are the same
+            topResults.forEach(result => {
+              result.score = 100;
+            });
+          }
+        }
+        
+        // Return top 20 results with normalized scores
+        res.json(topResults);
       } catch (error: any) {
         // Handle specific API errors
         const errorMessage = error.message || "";
