@@ -57,15 +57,10 @@ export function PropertySearch() {
   // Search mutation
   const { mutate: searchProperties, isPending: isSearching } = useMutation({
     mutationFn: async (query: string) => {
-      const response = await apiRequest('POST', '/api/property/search', { query });
-      const data = await response.json();
-      
-      // Check if we have an API key error
-      if (response.status === 503 && data.missingKey) {
-        throw new Error(data.message, { cause: { missingKey: data.missingKey } });
-      }
-      
-      return data;
+      return await apiRequest('/api/property/search', {
+        method: 'POST',
+        body: { query }
+      });
     },
     onSuccess: (data: SearchResult[]) => {
       setApiKeyError(null); // Clear any previous API key errors
@@ -76,16 +71,22 @@ export function PropertySearch() {
       console.error("Search error:", error);
       
       // Check if this is an API key error
-      if (error.cause?.missingKey) {
+      const errorMsg = error.message || "";
+      if (errorMsg.includes('OpenAI API key')) {
         setApiKeyError({
           missing: true,
-          key: error.cause.missingKey
+          key: 'OPENAI_API_KEY'
+        });
+      } else if (errorMsg.includes('Pinecone API key')) {
+        setApiKeyError({
+          missing: true,
+          key: 'PINECONE_API_KEY'
         });
       } else {
         // Regular error toast
         toast({
           title: "Search failed",
-          description: error.message,
+          description: errorMsg,
           variant: "destructive"
         });
       }
