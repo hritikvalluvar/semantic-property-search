@@ -51,8 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { query } = validatedData;
 
       try {
-        // Import geocoding utilities
-        const { parseLocationQuery, getCoordinates, calculateDistance, calculateProximityBoost } = await import('./services/geocoding');
+        // Use the already imported geocoding utilities from the top of the file
         
         // Extract specific attributes from the query
         const bedroomMatch = query.match(/(\d+)[\s-]bed/i);
@@ -64,6 +63,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const locationQuery = parseLocationQuery(query);
         let targetLocation = null;
         if (locationQuery) {
+          // Import the getCoordinates function from the geocoding service
+          const { getCoordinates } = await import('./services/geocoding');
           targetLocation = {
             name: locationQuery,
             coordinates: getCoordinates(locationQuery)
