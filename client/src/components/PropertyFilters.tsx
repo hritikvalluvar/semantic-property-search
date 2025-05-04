@@ -153,17 +153,18 @@ export function PropertyFilters({
               </span>
             </div>
             <div className="px-1 mb-6 mt-4">
-              <Slider
-                min={filterOptions.bedrooms.min}
-                max={filterOptions.bedrooms.max}
-                step={1}
-                value={[filters.bedrooms[0], filters.bedrooms[1]]}
-                onValueChange={([min, max]) => {
-                  updateRangeFilter('bedrooms', 0, min);
-                  updateRangeFilter('bedrooms', 1, max);
-                }}
-                className="my-4"
-              />
+              <div className="py-4 px-2">
+                <Slider
+                  min={filterOptions.bedrooms.min}
+                  max={filterOptions.bedrooms.max}
+                  step={1}
+                  value={[filters.bedrooms[0], filters.bedrooms[1]]}
+                  onValueChange={([min, max]) => {
+                    updateRangeFilter('bedrooms', 0, min);
+                    updateRangeFilter('bedrooms', 1, max);
+                  }}
+                />
+              </div>
               <div className="flex justify-between text-xs text-gray-500 mt-1">
                 <span>{filterOptions.bedrooms.min}</span>
                 <span>{filterOptions.bedrooms.max}</span>
@@ -180,17 +181,18 @@ export function PropertyFilters({
               </span>
             </div>
             <div className="px-1 mb-6 mt-4">
-              <Slider
-                min={filterOptions.bathrooms.min}
-                max={filterOptions.bathrooms.max}
-                step={1}
-                value={[filters.bathrooms[0], filters.bathrooms[1]]}
-                onValueChange={([min, max]) => {
-                  updateRangeFilter('bathrooms', 0, min);
-                  updateRangeFilter('bathrooms', 1, max);
-                }}
-                className="my-4"
-              />
+              <div className="py-4 px-2">
+                <Slider
+                  min={filterOptions.bathrooms.min}
+                  max={filterOptions.bathrooms.max}
+                  step={1}
+                  value={[filters.bathrooms[0], filters.bathrooms[1]]}
+                  onValueChange={([min, max]) => {
+                    updateRangeFilter('bathrooms', 0, min);
+                    updateRangeFilter('bathrooms', 1, max);
+                  }}
+                />
+              </div>
               <div className="flex justify-between text-xs text-gray-500 mt-1">
                 <span>{filterOptions.bathrooms.min}</span>
                 <span>{filterOptions.bathrooms.max}</span>
@@ -207,17 +209,18 @@ export function PropertyFilters({
               </span>
             </div>
             <div className="px-1 mb-6 mt-4">
-              <Slider
-                min={filterOptions.price.min}
-                max={filterOptions.price.max}
-                step={50000}
-                value={[filters.price[0], filters.price[1]]}
-                onValueChange={([min, max]) => {
-                  updateRangeFilter('price', 0, min);
-                  updateRangeFilter('price', 1, max);
-                }}
-                className="my-4"
-              />
+              <div className="py-4 px-2">
+                <Slider
+                  min={filterOptions.price.min}
+                  max={filterOptions.price.max}
+                  step={50000}
+                  value={[filters.price[0], filters.price[1]]}
+                  onValueChange={([min, max]) => {
+                    updateRangeFilter('price', 0, min);
+                    updateRangeFilter('price', 1, max);
+                  }}
+                />
+              </div>
               <div className="flex justify-between text-xs text-gray-500 mt-1">
                 <span>£{numberWithCommas(filterOptions.price.min)}</span>
                 <span>£{numberWithCommas(filterOptions.price.max)}</span>
