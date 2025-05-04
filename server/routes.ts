@@ -227,31 +227,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (query.trim()) {
             const normalizedQuery = query.toLowerCase();
             
-            // Simple text matching for fallback mode
+            // Enhanced text matching for fallback mode with scoring
             results = results.filter(property => {
-              // Check title, description, location, etc.
-              return property.title.toLowerCase().includes(normalizedQuery) ||
-                     property.description.toLowerCase().includes(normalizedQuery) ||
-                     property.location.toLowerCase().includes(normalizedQuery) ||
-                     property.type.toLowerCase().includes(normalizedQuery) ||
-                     property.style.toLowerCase().includes(normalizedQuery) ||
-                     property.view.toLowerCase().includes(normalizedQuery) ||
-                     property.furnishing.toLowerCase().includes(normalizedQuery);
+              // Check if property matches any part of the query
+              const titleMatch = property.title.toLowerCase().includes(normalizedQuery);
+              const descMatch = property.description.toLowerCase().includes(normalizedQuery);
+              const locationMatch = property.location.toLowerCase().includes(normalizedQuery);
+              const typeMatch = property.type.toLowerCase().includes(normalizedQuery);
+              const styleMatch = property.style.toLowerCase().includes(normalizedQuery);
+              const viewMatch = property.view.toLowerCase().includes(normalizedQuery);
+              const furnishingMatch = property.furnishing.toLowerCase().includes(normalizedQuery);
+              
+              // Check for individual terms in query (like "modern penthouse river")
+              const queryTerms = normalizedQuery.split(/\s+/);
+              const termMatches = queryTerms.filter(term => 
+                property.title.toLowerCase().includes(term) ||
+                property.description.toLowerCase().includes(term) ||
+                property.location.toLowerCase().includes(term) ||
+                property.type.toLowerCase().includes(term) ||
+                property.style.toLowerCase().includes(term) ||
+                property.view.toLowerCase().includes(term) ||
+                property.furnishing.toLowerCase().includes(term)
+              );
+              
+              // Set score based on how well it matches
+              if (titleMatch) property.score += 0.25;
+              if (typeMatch) property.score += 0.20;
+              if (styleMatch) property.score += 0.15;
+              if (viewMatch) property.score += 0.15;
+              if (locationMatch) property.score += 0.10;
+              if (furnishingMatch) property.score += 0.10;
+              if (descMatch) property.score += 0.05;
+              
+              // Bonus for matching multiple terms
+              if (termMatches.length > 0) {
+                property.score += 0.1 * (termMatches.length / queryTerms.length);
+              }
+              
+              // For keyword matches (complete words only), boost the score further
+              queryTerms.forEach(term => {
+                if (term.length <= 3) return; // Skip short words
+                
+                const termRegex = new RegExp(`\\b${term}\\b`, 'i');
+                if (termRegex.test(property.title)) property.score += 0.15;
+                if (termRegex.test(property.type)) property.score += 0.15;
+                if (termRegex.test(property.style)) property.score += 0.10;
+                if (termRegex.test(property.view)) property.score += 0.10;
+              });
+              
+              // Keep properties that match at least one term or have a direct match
+              return termMatches.length > 0 || titleMatch || descMatch || locationMatch || 
+                     typeMatch || styleMatch || viewMatch || furnishingMatch;
             });
             
-            // Boost scores based on text matches
-            results.forEach(result => {
-              const titleMatch = result.title.toLowerCase().includes(normalizedQuery);
-              const descMatch = result.description.toLowerCase().includes(normalizedQuery);
-              const locationMatch = result.location.toLowerCase().includes(normalizedQuery);
-              const typeMatch = result.type.toLowerCase().includes(normalizedQuery);
-              
-              // Add boosts based on match quality
-              if (titleMatch) result.score += 0.3;
-              if (descMatch) result.score += 0.1;
-              if (locationMatch) result.score += 0.2;
-              if (typeMatch) result.score += 0.2;
-            });
+            // Sort by score (highest first)
+            results.sort((a, b) => b.score - a.score);
           }
         }
         
