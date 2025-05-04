@@ -333,6 +333,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Check if a property image exists
+  apiRouter.get("/property/image/:id", async (req: Request, res: Response) => {
+    try {
+      const propertyId = parseInt(req.params.id);
+      const existingImage = getExistingPropertyImage(propertyId);
+      
+      res.json({ 
+        exists: !!existingImage,
+        filename: existingImage
+      });
+    } catch (error: any) {
+      console.error("Error checking property image:", error);
+      res.status(500).json({ 
+        message: "Failed to check for existing image",
+        error: error.message
+      });
+    }
+  });
+
   // Generate property image endpoint
   apiRouter.post("/property/image/:id", async (req: Request, res: Response) => {
     try {

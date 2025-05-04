@@ -13,23 +13,30 @@ const getApiBaseUrl = () => {
   return '';
 };
 
-export async function apiRequest(
-  method: string,
+export async function apiRequest<T = any>(
   url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
+  options?: RequestInit,
+  json: boolean = true
+): Promise<T> {
   // Ensure URL is properly formatted with base URL
   const apiUrl = url.startsWith('/') ? `${getApiBaseUrl()}${url}` : url;
   
+  const method = options?.method || 'GET';
+  const data = options?.body;
+  
   const res = await fetch(apiUrl, {
+    ...options,
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
+    headers: {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      ...(options?.headers || {})
+    },
+    body: data && typeof data !== 'string' ? JSON.stringify(data) : data,
     credentials: "include",
   });
 
   await throwIfResNotOk(res);
-  return res;
+  return json ? res.json() : res;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
