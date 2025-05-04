@@ -1,27 +1,28 @@
 # Semantic Property Search Application
 
-A modern web application for searching real estate properties using natural language queries, powered by OpenAI embeddings and Pinecone vector database. This prototype was built for an AI Engineer position at Savills to demonstrate the potential of semantic search in real estate.
+A modern web application for searching real estate properties using natural language queries, powered by OpenAI embeddings and Pinecone vector database. This prototype demonstrates the potential of semantic search in real estate.
 
 ## 🏠 Overview
 
 This application allows users to search for property listings using natural language instead of rigid filters. For example, users can search for "modern apartments with river view" or "affordable cozy homes with garden view in Richmond" and get semantically relevant results.
 
-The application is designed to make property search more intuitive and contextual compared to traditional filter-based search systems. It understands the semantic meaning behind user queries and finds properties that match the intent, not just the keywords.
+The application makes property search more intuitive and contextual compared to traditional filter-based search systems. It understands the semantic meaning behind user queries and finds properties that match the intent, not just the keywords.
 
-### Streamlit vs. React Implementation Comparison
+### Key Improvements
 
-This React implementation improves upon the original Streamlit prototype in several key areas:
+This modern React implementation includes several key improvements:
 
-| Feature | Streamlit Prototype | React Implementation |
-|---------|-------------------|---------------------|
-| Performance | Slower due to Python backend | Faster with optimized Node.js/Express backend |
-| UI Responsiveness | Limited by Streamlit framework | Highly responsive with React components |
-| Deployment | More complex deployment | Simpler deployment to Vercel |
-| Error Handling | Basic error handling | Robust error handling with fallback mechanisms |
-| Code Structure | Monolithic application | Modular client-server architecture |
-| Scalability | Limited by Streamlit's architecture | More scalable with separate frontend/backend |
-| Search Algorithm | Basic vector search | Hybrid search with attribute extraction |
-| Filter UX | Static Streamlit widgets | Dynamic, user-friendly filters |
+| Feature | Description |
+|---------|------------|
+| Performance | Fast response times with optimized Node.js/Express backend |
+| Resilient Search | Fallback search mechanism when API rate limits are hit |
+| UI Responsiveness | Highly responsive with React components and Shadcn UI |
+| Error Handling | Robust error handling with informative user feedback |
+| Architecture | Modular client-server architecture with clear separation of concerns |
+| Scalability | Separate frontend/backend for better scaling options |
+| Search Algorithm | Sophisticated hybrid search with attribute extraction and fallback capability |
+| Filter UX | Dynamic, user-friendly filters with real-time updates |
+| Deployment | Optimized for deployment on Replit with proper port configuration |
 
 ### Features
 
@@ -64,15 +65,14 @@ This React implementation improves upon the original Streamlit prototype in seve
 
 ### Environment Variables
 
-Create a `.env` file in the root directory with:
+This application requires the following environment variables:
 
 ```
 OPENAI_API_KEY=your_openai_api_key
 PINECONE_API_KEY=your_pinecone_api_key
-PINECONE_INDEX_NAME=property-listings-index
 ```
 
-### Installation
+### Installation and Running Locally
 
 1. Clone this repository
    ```bash
@@ -92,81 +92,41 @@ PINECONE_INDEX_NAME=property-listings-index
 
 4. Open your browser and navigate to http://localhost:5000
 
-## 🌎 Deployment to Vercel
+## 🌐 Deployment on Replit
 
-This application is configured for easy deployment to Vercel.
+The application is optimized for deployment on Replit.
 
-### Deployment Steps
+### Deployment Features
 
-1. Create a Vercel account at [vercel.com](https://vercel.com) if you don't have one
+- **Automatic Port Configuration**: Properly listens on the port assigned by Replit
+- **Health Check Endpoint**: Available at `/api/healthcheck` for Replit deployment monitoring
+- **Non-blocking Data Loading**: CSV data is loaded without blocking server startup
+- **API Rate Limit Handling**: Fallback search mechanism when OpenAI API limits are reached
+- **SVG Thumbnails**: All properties have pre-generated SVG images to reduce API costs
 
-2. Install the Vercel CLI:
-   ```bash
-   npm install -g vercel
-   ```
+### Troubleshooting Replit Deployment
 
-3. Log in to Vercel:
-   ```bash
-   vercel login
-   ```
+If you encounter issues with the deployment on Replit:
 
-4. Deploy to Vercel:
-   ```bash
-   vercel
-   ```
+1. **API Keys**: 
+   - Make sure both `OPENAI_API_KEY` and `PINECONE_API_KEY` are correctly set in Replit Secrets
+   - These keys are essential for the application to connect to external services
 
-5. Add environment variables to your Vercel project:
-   - `OPENAI_API_KEY`: Your OpenAI API key
-   - `PINECONE_API_KEY`: Your Pinecone API key
+2. **OpenAI Rate Limits**: 
+   - The free tier of OpenAI has a limit of 2000 requests per day
+   - The application includes a fallback text-based search when rate limits are hit
    
-   You can add these in the Vercel dashboard under Settings > Environment Variables, or using the CLI:
-   ```bash
-   vercel env add OPENAI_API_KEY
-   vercel env add PINECONE_API_KEY
-   ```
+3. **Server Port Issues**:
+   - If you see "address already in use" errors, restart the Replit environment
+   - The application is configured to listen on port 5000 with proper host settings
 
-6. For production deployment:
-   ```bash
-   vercel --prod
-   ```
+4. **CSV Loading Issues**:
+   - Check that the CSV file is loading properly by monitoring server logs
+   - The application should show "Loaded X properties from CSV" in the logs
 
-### Important Notes for Vercel Deployment
-
-- The first request to your deployed app might be slow due to the cold start of the serverless function
-- The application has a fallback search mechanism that works even if OpenAI API rate limits are hit
-- Make sure the Pinecone index is properly set up before deploying
-
-### Troubleshooting Vercel Deployment
-
-If you encounter issues during deployment:
-
-1. **CSV Loading Issues**:
-   - Verify that the CSV file is correctly included in your deployment
-   - Check the function logs in the Vercel dashboard for any file access errors
-
-2. **API Key Issues**:
-   - Ensure that both `OPENAI_API_KEY` and `PINECONE_API_KEY` are correctly set in Vercel's environment variables
-   - Make sure the API keys have the necessary permissions and aren't expired
-
-3. **Timeout Issues**:
-   - If operations take too long, consider pre-processing the embeddings and storing them
-   - The serverless function timeout is set to 30 seconds; complex operations may require optimization
-
-4. **Memory Limit Issues**:
-   - The memory limit is set to 1024MB which should be sufficient, but if you see out-of-memory errors, you might need to optimize data loading or processing
-
-5. **Rate Limiting**:
-   - The application includes fallback text search for when OpenAI rate limits are hit
-   - For production use with high traffic, consider upgrading your OpenAI plan
-
-6. **Index Issues**:
-   - If Pinecone searches fail, check that your index is correctly configured with appropriate dimensions (1536 for text-embedding-ada-002)
-   - Verify that data has been successfully loaded into the index
-
-For more detailed debugging, you can use the Vercel CLI to view logs:
-```bash
-vercel logs your-project-name
-```
+5. **Performance Optimization**:
+   - For better performance, reduce the number of properties or optimize the embedding process
+   - The application is designed to handle 125 properties efficiently on Replit
 
 ## 📊 Data Structure
 
@@ -185,12 +145,24 @@ The application uses a property listings CSV with the following fields:
 
 ## 🔍 How It Works
 
-1. Property listings are loaded from the CSV file
+### Primary Search Flow
+1. Property listings are loaded from the CSV file during server startup
 2. Text embeddings are generated for each property using OpenAI's embedding model
-3. Embeddings are stored in Pinecone's vector database
-4. When a user submits a search query, the query is converted to an embedding
-5. Pinecone performs a similarity search to find the closest matching properties
-6. Results are returned with relevance scores and displayed to the user
+3. Embeddings are stored in Pinecone's vector database for quick retrieval
+4. When a user submits a search query, the system attempts to convert it to an embedding
+5. Pinecone performs a similarity search to find semantically matching properties
+6. Results are processed with attribute filtering and score boosting
+7. Final results are ranked and returned to the user's interface
+
+### Fallback Search Mechanism
+If OpenAI API rate limits are reached:
+1. The system detects the rate limit error (HTTP 429)
+2. It automatically switches to the text-based search algorithm
+3. The query is broken down into individual terms and matched against property attributes
+4. Properties are scored based on matches across title, type, style, view, location, etc.
+5. Exact word matches are given higher scores than partial matches
+6. Additional attribute filtering (bedrooms, price range, etc.) is still applied
+7. Results are sorted by relevance score and returned to the user
 
 ## 🏗️ Architecture
 
@@ -293,12 +265,13 @@ The application uses a hybrid search approach:
 
 ## 🚀 Future Enhancements
 
-1. **Advanced Query Parsing**: Implement more sophisticated NLP for understanding complex queries
-2. **User Profiles**: Allow users to save preferences and search history
-3. **Interactive Map**: Display property locations on an interactive map
-4. **Real-time Updates**: Integrate with property listing APIs for real-time data
-5. **Multi-modal Search**: Enable searching by both text and image references
-6. **Recommendation Engine**: Suggest properties based on user behavior and preferences
+1. **Enhanced Fallback Algorithm**: Further improve the text-based search for even better results when OpenAI API is unavailable
+2. **Caching System**: Implement query caching to reduce API calls and improve response time
+3. **User Profiles**: Allow users to save preferences and search history for personalized results
+4. **Interactive Map**: Display property locations on an interactive map with proximity search
+5. **Multi-modal Search**: Enable searching by both text descriptions and reference images
+6. **Property Comparison**: Add ability to compare multiple properties side by side
+7. **Mobile Application**: Develop a dedicated mobile app with offline capabilities
 
 ## 📄 License
 
