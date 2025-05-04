@@ -47,9 +47,21 @@ export interface PropertyEmbedding {
   embedding: number[];
 }
 
+// Coordinates for location-based search
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+// Property with geo-coordinates
+export interface PropertyWithCoordinates extends Property {
+  coordinates?: Coordinates;
+}
+
 // Search result with score
-export interface SearchResult extends Property {
+export interface SearchResult extends PropertyWithCoordinates {
   score: number;
+  distance?: number; // Distance in km from query location (if specified)
 }
 
 // Filter options

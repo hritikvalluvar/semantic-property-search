@@ -7,6 +7,8 @@ import {
   PropertyEmbedding,
   User,
   InsertUser,
+  PropertyWithCoordinates,
+  Coordinates
 } from '@shared/schema';
 import { getEmbedding } from './services/openai';
 import { upsertVectors } from './services/pinecone';
@@ -23,7 +25,7 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
-  private properties: Map<string, Property>;
+  private properties: Map<string, PropertyWithCoordinates>;
   private propertyEmbeddings: Map<string, number[]>;
   currentId: number;
 
@@ -85,9 +87,15 @@ export class MemStorage implements IStorage {
     const properties: Property[] = [];
     const embeddingPromises: Promise<PropertyEmbedding | null>[] = [];
     
+    // Import geocoding service
+    const { getCoordinates } = await import('./services/geocoding');
+    
     // Process each row
     for await (const row of parser) {
-      const property: Property = {
+      // Get coordinates for the location
+      const coordinates = getCoordinates(row.location);
+      
+      const property: PropertyWithCoordinates = {
         id: parseInt(row.id),
         title: row.title,
         description: row.description,
@@ -99,7 +107,8 @@ export class MemStorage implements IStorage {
         price: parseInt(row.price),
         view: row.view,
         furnishing: row.furnishing,
-        embedding: row.embedding || null
+        embedding: row.embedding || null,
+        coordinates  // Add coordinates to the property
       };
       
       this.properties.set(property.id.toString(), property);
@@ -153,9 +162,12 @@ export class MemStorage implements IStorage {
     }
   }
   
-  private loadMockPropertyData(): void {
+  private async loadMockPropertyData(): Promise<void> {
+    // Import geocoding service
+    const { getCoordinates } = await import('./services/geocoding');
+    
     // Mock property data for testing when CSV is not available
-    const mockProperties: Property[] = [
+    const mockProperties: PropertyWithCoordinates[] = [
       {
         id: 1,
         title: "Elegant Modern House with Park View",
@@ -168,7 +180,8 @@ export class MemStorage implements IStorage {
         price: 1250000,
         view: "Park",
         furnishing: "Unfurnished",
-        embedding: null
+        embedding: null,
+        coordinates: getCoordinates("Richmond")
       },
       {
         id: 2,
