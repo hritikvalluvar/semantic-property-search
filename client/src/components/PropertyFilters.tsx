@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { FilterState, FilterOptions } from "@/lib/types";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import { RangeSlider } from "@/components/ui/range-slider";
 
 interface PropertyFiltersProps {
   filterOptions: FilterOptions;
@@ -153,22 +153,16 @@ export function PropertyFilters({
               </span>
             </div>
             <div className="px-1 mb-6 mt-4">
-              <div className="py-4 px-2">
-                <Slider
-                  min={filterOptions.bedrooms.min}
-                  max={filterOptions.bedrooms.max}
-                  step={1}
-                  value={[filters.bedrooms[0], filters.bedrooms[1]]}
-                  onValueChange={([min, max]) => {
-                    updateRangeFilter('bedrooms', 0, min);
-                    updateRangeFilter('bedrooms', 1, max);
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>{filterOptions.bedrooms.min}</span>
-                <span>{filterOptions.bedrooms.max}</span>
-              </div>
+              <RangeSlider
+                min={filterOptions.bedrooms.min}
+                max={filterOptions.bedrooms.max}
+                step={1}
+                values={[filters.bedrooms[0], filters.bedrooms[1]]}
+                onChange={([min, max]) => {
+                  updateRangeFilter('bedrooms', 0, min);
+                  updateRangeFilter('bedrooms', 1, max);
+                }}
+              />
             </div>
           </div>
           
@@ -181,22 +175,16 @@ export function PropertyFilters({
               </span>
             </div>
             <div className="px-1 mb-6 mt-4">
-              <div className="py-4 px-2">
-                <Slider
-                  min={filterOptions.bathrooms.min}
-                  max={filterOptions.bathrooms.max}
-                  step={1}
-                  value={[filters.bathrooms[0], filters.bathrooms[1]]}
-                  onValueChange={([min, max]) => {
-                    updateRangeFilter('bathrooms', 0, min);
-                    updateRangeFilter('bathrooms', 1, max);
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>{filterOptions.bathrooms.min}</span>
-                <span>{filterOptions.bathrooms.max}</span>
-              </div>
+              <RangeSlider
+                min={filterOptions.bathrooms.min}
+                max={filterOptions.bathrooms.max}
+                step={1}
+                values={[filters.bathrooms[0], filters.bathrooms[1]]}
+                onChange={([min, max]) => {
+                  updateRangeFilter('bathrooms', 0, min);
+                  updateRangeFilter('bathrooms', 1, max);
+                }}
+              />
             </div>
           </div>
           
@@ -209,22 +197,17 @@ export function PropertyFilters({
               </span>
             </div>
             <div className="px-1 mb-6 mt-4">
-              <div className="py-4 px-2">
-                <Slider
-                  min={filterOptions.price.min}
-                  max={filterOptions.price.max}
-                  step={50000}
-                  value={[filters.price[0], filters.price[1]]}
-                  onValueChange={([min, max]) => {
-                    updateRangeFilter('price', 0, min);
-                    updateRangeFilter('price', 1, max);
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>£{numberWithCommas(filterOptions.price.min)}</span>
-                <span>£{numberWithCommas(filterOptions.price.max)}</span>
-              </div>
+              <RangeSlider
+                min={filterOptions.price.min}
+                max={filterOptions.price.max}
+                step={50000}
+                values={[filters.price[0], filters.price[1]]}
+                onChange={([min, max]) => {
+                  updateRangeFilter('price', 0, min);
+                  updateRangeFilter('price', 1, max);
+                }}
+                formatValue={(value) => `£${numberWithCommas(value)}`}
+              />
             </div>
           </div>
           
