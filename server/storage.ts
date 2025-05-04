@@ -70,7 +70,7 @@ export class MemStorage implements IStorage {
     if (isProd || !fs.existsSync(csvFilePath)) {
       console.log(`Using mock data (Production: ${isProd}, File exists: ${fs.existsSync(csvFilePath)})`);
       // Load mock data instead
-      this.loadMockPropertyData();
+      await this.loadMockPropertyData();
       return;
     }
     
@@ -195,7 +195,8 @@ export class MemStorage implements IStorage {
         price: 650000,
         view: "Garden",
         furnishing: "Partly Furnished",
-        embedding: null
+        embedding: null,
+        coordinates: getCoordinates("Wimbledon")
       },
       {
         id: 3,
@@ -209,7 +210,8 @@ export class MemStorage implements IStorage {
         price: 1750000,
         view: "River",
         furnishing: "Unfurnished",
-        embedding: null
+        embedding: null,
+        coordinates: getCoordinates("Greenwich")
       },
       {
         id: 4,
@@ -223,7 +225,8 @@ export class MemStorage implements IStorage {
         price: 975000,
         view: "City",
         furnishing: "Furnished",
-        embedding: null
+        embedding: null,
+        coordinates: getCoordinates("Canary Wharf")
       },
       {
         id: 5,
@@ -237,7 +240,8 @@ export class MemStorage implements IStorage {
         price: 850000,
         view: "Garden",
         furnishing: "Furnished",
-        embedding: null
+        embedding: null,
+        coordinates: getCoordinates("Richmond")
       }
     ];
     

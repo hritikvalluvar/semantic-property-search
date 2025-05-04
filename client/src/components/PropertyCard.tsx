@@ -26,9 +26,17 @@ export function PropertyCard({ property }: PropertyCardProps) {
               </div>
             )}
           </div>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/40 px-2 py-1">
-            Match score: {Math.round(property.score)}%
-          </Badge>
+          <div className="flex gap-2 flex-wrap">
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/40 px-2 py-1">
+              Match score: {Math.round(property.score)}%
+            </Badge>
+            {property.distance !== undefined && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-2 py-1 flex items-center">
+                <MapPin className="mr-1 h-3 w-3" />
+                {property.distance} km away
+              </Badge>
+            )}
+          </div>
         </div>
         
         <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">

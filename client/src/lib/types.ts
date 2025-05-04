@@ -17,6 +17,7 @@ export interface PropertyListing {
 export interface SearchResult extends PropertyListing {
   score: number;
   exactMatch?: boolean;
+  distance?: number; // Distance in km from the search location
 }
 
 // Filter state structure

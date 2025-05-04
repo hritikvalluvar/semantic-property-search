@@ -48,11 +48,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { query } = validatedData;
 
       try {
+        // Import geocoding utilities
+        const { parseLocationQuery, getCoordinates, calculateDistance, calculateProximityBoost } = await import('./services/geocoding');
+        
         // Extract specific attributes from the query
         const bedroomMatch = query.match(/(\d+)[\s-]bed/i);
         const bathroomMatch = query.match(/(\d+)[\s-]bath/i);
         const specificAttributes: Record<string, any> = {};
         const priceRanges: {min?: number, max?: number, target?: number} = {};
+        
+        // Extract location proximity information
+        const locationQuery = parseLocationQuery(query);
+        let targetLocation = null;
+        if (locationQuery) {
+          targetLocation = {
+            name: locationQuery,
+            coordinates: getCoordinates(locationQuery)
+          };
+          specificAttributes.targetLocation = targetLocation;
+        }
         
         // Extract bedrooms
         if (bedroomMatch) {
@@ -197,6 +211,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   } else if (percentDiff <= 0.1) { // Within 10% of target
                     matchBoost += 0.25;
                   } else if (percentDiff <= 0.2) { // Within 20% of target
+                    matchBoost += 0.15;
+                  } else {
+                    isExactMatch = false;
+                  }
+                }
+              } else if (attr === 'targetLocation') {
+                // Handle location proximity
+                const targetLoc = value as { name: string, coordinates: { lat: number, lng: number } };
+                
+                // Check if property has coordinates
+                if (result.coordinates) {
+                  // Calculate distance between property and target location
+                  const distance = calculateDistance(targetLoc.coordinates, result.coordinates);
+                  result.distance = Math.round(distance * 10) / 10; // Round to 1 decimal place
+                  
+                  // Apply proximity boost based on distance
+                  const proximityBoost = calculateProximityBoost(distance);
+                  matchBoost += proximityBoost;
+                  
+                  // Consider it an exact match if it's very close (within 2km)
+                  if (distance <= 2) {
+                    matchBoost += 0.2; // Additional boost for very close properties
+                  } else {
+                    isExactMatch = false;
+                  }
+                } else {
+                  // If no coordinates, check if the location name matches
+                  if (result.location.toLowerCase().includes(targetLoc.name.toLowerCase()) || 
+                      targetLoc.name.toLowerCase().includes(result.location.toLowerCase())) {
                     matchBoost += 0.15;
                   } else {
                     isExactMatch = false;
