@@ -152,17 +152,31 @@ export function PropertyFilters({
                 {filters.bedrooms[0]} - {filters.bedrooms[1]}
               </span>
             </div>
-            <div className="px-1 mb-6 mt-4">
-              <RangeSlider
-                min={filterOptions.bedrooms.min}
-                max={filterOptions.bedrooms.max}
-                step={1}
-                values={[filters.bedrooms[0], filters.bedrooms[1]]}
-                onChange={([min, max]) => {
-                  updateRangeFilter('bedrooms', 0, min);
-                  updateRangeFilter('bedrooms', 1, max);
-                }}
-              />
+            <div>
+              {/* Simple Range Input Version */}
+              <div className="p-2 flex items-center">
+                <input 
+                  type="range" 
+                  min={filterOptions.bedrooms.min} 
+                  max={filters.bedrooms[1]} 
+                  value={filters.bedrooms[0]} 
+                  onChange={(e) => updateRangeFilter('bedrooms', 0, Number(e.target.value))}
+                  className="w-1/2"
+                />
+                <span className="mx-2">to</span>
+                <input 
+                  type="range" 
+                  min={filters.bedrooms[0]} 
+                  max={filterOptions.bedrooms.max} 
+                  value={filters.bedrooms[1]} 
+                  onChange={(e) => updateRangeFilter('bedrooms', 1, Number(e.target.value))}
+                  className="w-1/2"
+                />
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>{filterOptions.bedrooms.min}</span>
+                <span>{filterOptions.bedrooms.max}</span>
+              </div>
             </div>
           </div>
           
@@ -174,17 +188,31 @@ export function PropertyFilters({
                 {filters.bathrooms[0]} - {filters.bathrooms[1]}
               </span>
             </div>
-            <div className="px-1 mb-6 mt-4">
-              <RangeSlider
-                min={filterOptions.bathrooms.min}
-                max={filterOptions.bathrooms.max}
-                step={1}
-                values={[filters.bathrooms[0], filters.bathrooms[1]]}
-                onChange={([min, max]) => {
-                  updateRangeFilter('bathrooms', 0, min);
-                  updateRangeFilter('bathrooms', 1, max);
-                }}
-              />
+            <div>
+              {/* Simple Range Input Version */}
+              <div className="p-2 flex items-center">
+                <input 
+                  type="range" 
+                  min={filterOptions.bathrooms.min} 
+                  max={filters.bathrooms[1]} 
+                  value={filters.bathrooms[0]} 
+                  onChange={(e) => updateRangeFilter('bathrooms', 0, Number(e.target.value))}
+                  className="w-1/2"
+                />
+                <span className="mx-2">to</span>
+                <input 
+                  type="range" 
+                  min={filters.bathrooms[0]} 
+                  max={filterOptions.bathrooms.max} 
+                  value={filters.bathrooms[1]} 
+                  onChange={(e) => updateRangeFilter('bathrooms', 1, Number(e.target.value))}
+                  className="w-1/2"
+                />
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>{filterOptions.bathrooms.min}</span>
+                <span>{filterOptions.bathrooms.max}</span>
+              </div>
             </div>
           </div>
           
@@ -196,18 +224,33 @@ export function PropertyFilters({
                 £{numberWithCommas(filters.price[0])} - £{numberWithCommas(filters.price[1])}
               </span>
             </div>
-            <div className="px-1 mb-6 mt-4">
-              <RangeSlider
-                min={filterOptions.price.min}
-                max={filterOptions.price.max}
-                step={50000}
-                values={[filters.price[0], filters.price[1]]}
-                onChange={([min, max]) => {
-                  updateRangeFilter('price', 0, min);
-                  updateRangeFilter('price', 1, max);
-                }}
-                formatValue={(value) => `£${numberWithCommas(value)}`}
-              />
+            <div>
+              {/* Simple Range Input Version */}
+              <div className="p-2 flex items-center">
+                <input 
+                  type="range" 
+                  min={filterOptions.price.min} 
+                  max={filters.price[1]} 
+                  value={filters.price[0]} 
+                  onChange={(e) => updateRangeFilter('price', 0, Number(e.target.value))}
+                  className="w-1/2"
+                  step={50000}
+                />
+                <span className="mx-2">to</span>
+                <input 
+                  type="range" 
+                  min={filters.price[0]} 
+                  max={filterOptions.price.max} 
+                  value={filters.price[1]} 
+                  onChange={(e) => updateRangeFilter('price', 1, Number(e.target.value))}
+                  className="w-1/2"
+                  step={50000}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>£{numberWithCommas(filterOptions.price.min)}</span>
+                <span>£{numberWithCommas(filterOptions.price.max)}</span>
+              </div>
             </div>
           </div>
           
