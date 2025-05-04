@@ -1,45 +1,57 @@
-// Vercel serverless function entry point
-import express from 'express';
-import cors from 'cors';
-import { createServer } from 'http';
-import { registerRoutes } from '../server/routes';
-import { storage } from '../server/storage';
+// Vercel serverless function handler (CommonJS syntax)
+const express = require('express');
+const cors = require('cors');
+const { registerRoutes } = require('../server/routes');
+const { storage } = require('../server/storage');
 
 // Create Express app
 const app = express();
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
-// Initialize data at startup
-let dataInitialized = false;
+// Setup for serverless function
+let isDataInitialized = false;
+
+// Initialize data on cold start
 const initializeData = async () => {
-  if (!dataInitialized) {
-    console.log('Initializing data for serverless function...');
+  console.log("Initializing data in serverless function");
+  if (!isDataInitialized) {
     try {
       await storage.loadPropertyDataFromCSV();
-      dataInitialized = true;
-      console.log('Data initialization complete');
-    } catch (err) {
-      console.error('Error initializing data:', err);
+      isDataInitialized = true;
+      console.log("Data successfully initialized");
+    } catch (error) {
+      console.error("Error initializing data:", error);
+      // Still mark as initialized to prevent infinite retries
+      isDataInitialized = true;
     }
   }
 };
 
-// Initialize routes
+// Register API routes
 registerRoutes(app);
 
-// Create HTTP server
-const server = createServer(app);
-
 // Serverless function handler
-export default async (req, res) => {
-  // Initialize data if needed
-  await initializeData();
+module.exports = async function handler(req, res) {
+  console.log(`API request received: ${req.method} ${req.url}`);
   
-  // Handle the request with Express
+  // Initialize data on first request (cold start)
+  try {
+    await initializeData();
+  } catch (error) {
+    console.error("Error during data initialization:", error);
+  }
+  
+  // Special handling for OPTIONS requests (CORS preflight)
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  // Forward the request to Express
   return app(req, res);
-};
+}
