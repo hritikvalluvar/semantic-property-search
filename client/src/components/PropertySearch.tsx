@@ -173,7 +173,12 @@ export function PropertySearch() {
     const currentValues = updatedFilters[filterType as keyof FilterState] as string[];
     
     if (Array.isArray(currentValues)) {
-      if (currentValues.includes(value)) {
+      // Handle comma-separated values for legacy location dropdown
+      if (value.includes(',')) {
+        updatedFilters[filterType as keyof FilterState] = value.split(',') as any;
+      } 
+      // Handle normal toggle behavior for buttons
+      else if (currentValues.includes(value)) {
         updatedFilters[filterType as keyof FilterState] = currentValues.filter(item => item !== value) as any;
       } else {
         updatedFilters[filterType as keyof FilterState] = [...currentValues, value] as any;
@@ -182,6 +187,9 @@ export function PropertySearch() {
     
     setFilters(updatedFilters);
     applyFilters();
+    
+    // Debug log for filter changes
+    console.log(`Filter ${filterType} updated:`, updatedFilters[filterType as keyof FilterState]);
   };
 
   // Update range filter
