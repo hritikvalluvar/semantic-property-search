@@ -1,7 +1,10 @@
+import { useState, useEffect } from "react";
 import { SearchResult } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Building, Hotel, CloudUpload, Brush, Sofa, Mountain, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Building, Hotel, CloudUpload, Brush, Sofa, Mountain, CheckCircle2, ImageIcon, Loader2 } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface PropertyCardProps {
   property: SearchResult;

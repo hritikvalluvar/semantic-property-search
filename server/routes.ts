@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getEmbedding } from "./services/openai";
 import { searchVectors } from "./services/pinecone";
+import { generatePropertyImage, getExistingPropertyImage } from "./services/image-generation";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -332,6 +333,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Generate property image endpoint
+  apiRouter.post("/property/image/:id", async (req: Request, res: Response) => {
+    try {
+      // Check for OpenAI API key
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(503).json({ 
+          message: "OpenAI API key is missing. Please set the OPENAI_API_KEY environment variable.",
+          missingKey: "OPENAI_API_KEY" 
+        });
+      }
+
+      const propertyId = parseInt(req.params.id);
+      
+      // Check if property exists
+      const property = await storage.getPropertyById(propertyId);
+      if (!property) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+
+      // Check if an image already exists for this property
+      const existingImage = getExistingPropertyImage(propertyId);
+      if (existingImage) {
+        return res.json({ 
+          message: "Image already exists",
+          filename: existingImage
+        });
+      }
+
+      // Generate a new image
+      const { filename } = await generatePropertyImage(property);
+      
+      res.json({ 
+        message: "Image generated successfully",
+        filename 
+      });
+    } catch (error: any) {
+      console.error("Error generating image:", error);
+      res.status(500).json({ 
+        message: "An error occurred while generating the image",
+        error: error.message
+      });
+    }
+  });
+
+  // Serve generated images statically
+  app.use("/generated-images", express.static("client/public/generated-images"));
+
   // Use the API router with prefix
   app.use("/api", apiRouter);
 
