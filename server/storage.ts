@@ -166,107 +166,108 @@ export class MemStorage implements IStorage {
     // Import geocoding service
     const { getCoordinates } = await import('./services/geocoding');
     
-    // Mock property data for testing when CSV is not available
-    const mockProperties: PropertyWithCoordinates[] = [
-      {
-        id: 1,
-        title: "Elegant Modern House with Park View",
-        description: "A stunning modern house with 4 spacious bedrooms, large open-plan living area, and beautiful views overlooking the park. Features high-end finishes, a designer kitchen, and private garden.",
-        location: "Richmond",
-        type: "House",
-        style: "Modern",
-        bedrooms: 4,
-        bathrooms: 2,
-        price: 1250000,
-        view: "Park",
-        furnishing: "Unfurnished",
+    // Data for property generation - we'll generate 125 properties
+    const locations = ['Chelsea', 'Wimbledon', 'Greenwich', 'Canary Wharf', 'Richmond', 'Camden', 
+                      'Islington', 'Kensington', 'Hammersmith', 'Brixton', 'Hackney', 'Clapham', 
+                      'Fulham', 'Notting Hill', 'Shoreditch', 'Battersea', 'Mayfair', 'Dulwich'];
+    
+    const types = ['House', 'Flat', 'Bungalow', 'Penthouse', 'Townhouse', 'Studio', 'Cottage', 'Duplex', 'Mansion'];
+    
+    const styles = ['Modern', 'Victorian', 'Contemporary', 'Traditional', 'Art Deco', 'Georgian', 
+                   'Minimalist', 'Industrial', 'Scandinavian', 'Rustic', 'Mediterranean', 'Colonial'];
+    
+    const views = ['Park View', 'Garden View', 'River View', 'City View', 'Mountain View', 'No View', 
+                   'Sea View', 'Lake View', 'Forest View'];
+    
+    const furnishings = ['Furnished', 'Unfurnished', 'Part-Furnished'];
+    
+    // Generate additional properties (125 total)
+    const mockProperties: PropertyWithCoordinates[] = [];
+    
+    console.log('Generating 125 properties...');
+    
+    for (let i = 0; i < 125; i++) {
+      const id = i + 1;
+      const location = locations[Math.floor(Math.random() * locations.length)];
+      const type = types[Math.floor(Math.random() * types.length)];
+      const style = styles[Math.floor(Math.random() * styles.length)];
+      const bedrooms = Math.floor(Math.random() * 6) + 1;
+      const bathrooms = Math.floor(Math.random() * 4) + 1;
+      const price = Math.floor(Math.random() * 2000000) + 300000;
+      const view = views[Math.floor(Math.random() * views.length)];
+      const furnishing = furnishings[Math.floor(Math.random() * furnishings.length)];
+      
+      // Create a title
+      const title = `${style} ${bedrooms}-bedroom ${type} in ${location}`;
+      
+      // Create a comprehensive description
+      const description = `A ${style.toLowerCase()} ${type.toLowerCase()} located in ${location}, ` +
+                         `featuring ${bedrooms} bedroom${bedrooms > 1 ? 's' : ''}, ` +
+                         `${bathrooms} bathroom${bathrooms > 1 ? 's' : ''}, with a ${view.toLowerCase()}, ` +
+                         `and is ${furnishing.toLowerCase()}. This property offers a great blend of style and comfort ` +
+                         `with modern amenities and an ideal location.`;
+      
+      const coordinates = getCoordinates(location);
+      
+      const property: PropertyWithCoordinates = {
+        id,
+        title,
+        description,
+        location,
+        type,
+        style,
+        bedrooms,
+        bathrooms,
+        price,
+        view,
+        furnishing,
         embedding: null,
-        coordinates: getCoordinates("Richmond")
-      },
-      {
-        id: 2,
-        title: "Charming Victorian Flat",
-        description: "Beautiful Victorian conversion flat with original features including high ceilings and ornate cornicing. Two double bedrooms, modern bathroom, and a south-facing living room overlooking communal gardens.",
-        location: "Wimbledon",
-        type: "Flat",
-        style: "Victorian",
-        bedrooms: 2,
-        bathrooms: 1,
-        price: 650000,
-        view: "Garden",
-        furnishing: "Partly Furnished",
-        embedding: null,
-        coordinates: getCoordinates("Wimbledon")
-      },
-      {
-        id: 3,
-        title: "Luxury Riverside Bungalow",
-        description: "Spacious 5-bedroom contemporary bungalow with stunning views of the river. Features include floor-to-ceiling windows, private mooring, luxury kitchen, and landscaped gardens leading down to the riverbank.",
-        location: "Greenwich",
-        type: "Bungalow",
-        style: "Contemporary",
-        bedrooms: 5,
-        bathrooms: 3,
-        price: 1750000,
-        view: "River",
-        furnishing: "Unfurnished",
-        embedding: null,
-        coordinates: getCoordinates("Greenwich")
-      },
-      {
-        id: 4,
-        title: "Stylish City Townhouse",
-        description: "Modern 3-bedroom townhouse with spectacular city views. Features an integrated smart home system, private roof terrace, secure parking, and high specification throughout.",
-        location: "Canary Wharf",
-        type: "Townhouse",
-        style: "Contemporary",
-        bedrooms: 3,
-        bathrooms: 2,
-        price: 975000,
-        view: "City",
-        furnishing: "Furnished",
-        embedding: null,
-        coordinates: getCoordinates("Canary Wharf")
-      },
-      {
-        id: 5,
-        title: "Cozy Garden Cottage",
-        description: "Charming traditional cottage with beautiful walled garden. Featuring two bedrooms, exposed beams, inglenook fireplace, and country-style kitchen. A perfect blend of period features and modern comfort.",
-        location: "Richmond",
-        type: "Cottage",
-        style: "Traditional",
-        bedrooms: 2,
-        bathrooms: 1,
-        price: 850000,
-        view: "Garden",
-        furnishing: "Furnished",
-        embedding: null,
-        coordinates: getCoordinates("Richmond")
-      }
-    ];
+        coordinates
+      };
+      
+      mockProperties.push(property);
+    }
+    
+    console.log(`Generated ${mockProperties.length} properties`);
     
     // Store mock properties and generate their embeddings
+    const embeddingPromises: Promise<PropertyEmbedding | null>[] = [];
+    
     mockProperties.forEach(property => {
       this.properties.set(property.id.toString(), property);
       
       const textToEmbed = `${property.title}. ${property.description}. ${property.type} in ${property.location}. ${property.style} style. ${property.bedrooms} bedrooms. ${property.bathrooms} bathrooms. ${property.view} view. ${property.furnishing}.`;
       
-      getEmbedding(textToEmbed)
+      const promise = getEmbedding(textToEmbed)
         .then(embedding => {
           this.propertyEmbeddings.set(property.id.toString(), embedding);
-          
-          // Upsert to Pinecone
-          upsertVectors([{
-            id: property.id.toString(),
-            embedding
-          }]).catch(error => {
-            console.error(`Error upserting vector for property ${property.id}: ${error}`);
-          });
+          return { id: property.id.toString(), embedding };
         })
         .catch(error => {
           console.error(`Error generating embedding for property ${property.id}: ${error}`);
+          return null;
         });
+      
+      embeddingPromises.push(promise);
     });
+    
+    // Wait for all embedding promises to resolve
+    const embeddings = await Promise.all(embeddingPromises);
+    const validEmbeddings = embeddings.filter((e): e is PropertyEmbedding => e !== null);
+    
+    // Upsert vectors into Pinecone
+    if (validEmbeddings.length > 0) {
+      try {
+        console.log(`Upserting ${validEmbeddings.length} vectors into Pinecone index`);
+        await upsertVectors(validEmbeddings);
+        console.log(`Successfully upserted vectors into Pinecone index`);
+      } catch (error) {
+        console.error("Error upserting vectors into Pinecone:", error);
+      }
+    }
+    
+    // Generate images for all properties
+    await this.preGeneratePropertyImages();
   }
 
   async getFilterOptions(): Promise<FilterOptions> {
@@ -306,6 +307,237 @@ export class MemStorage implements IStorage {
     return ids
       .map(id => this.properties.get(id))
       .filter(p => p !== undefined) as Property[];
+  }
+
+  /**
+   * Expand property dataset to create 125 properties total
+   * Uses existing CSV data as a base and augments with variations
+   */
+  private async expandPropertyDataset(): Promise<void> {
+    // Parse the base CSV data first
+    const csvFilePath = path.resolve(process.cwd(), 'semantic_property_listings.csv');
+    const parser = fs
+      .createReadStream(csvFilePath)
+      .pipe(parse({
+        columns: true,
+        skip_empty_lines: true
+      }));
+      
+    // Load the base properties
+    const baseProperties: PropertyWithCoordinates[] = [];
+    const { getCoordinates } = await import('./services/geocoding');
+    
+    // Process each row from the CSV
+    for await (const row of parser) {
+      const coordinates = getCoordinates(row.location);
+      
+      const property: PropertyWithCoordinates = {
+        id: parseInt(row.id),
+        title: row.title,
+        description: row.description,
+        location: row.location,
+        type: row.type,
+        style: row.style,
+        bedrooms: parseInt(row.bedrooms),
+        bathrooms: parseInt(row.bathrooms),
+        price: parseInt(row.price),
+        view: row.view,
+        furnishing: row.furnishing,
+        embedding: null,
+        coordinates  // Add coordinates to the property
+      };
+      
+      baseProperties.push(property);
+      this.properties.set(property.id.toString(), property);
+    }
+    
+    console.log(`Loaded ${baseProperties.length} base properties from CSV`);
+    
+    // Data for property generation
+    const locations = ['Chelsea', 'Wimbledon', 'Greenwich', 'Canary Wharf', 'Richmond', 'Camden', 
+                      'Islington', 'Kensington', 'Hammersmith', 'Brixton', 'Hackney', 'Clapham', 
+                      'Fulham', 'Notting Hill', 'Shoreditch', 'Battersea', 'Mayfair', 'Dulwich'];
+    
+    const types = ['House', 'Flat', 'Bungalow', 'Penthouse', 'Townhouse', 'Studio', 'Cottage', 'Duplex', 'Mansion'];
+    
+    const styles = ['Modern', 'Victorian', 'Contemporary', 'Traditional', 'Art Deco', 'Georgian', 
+                  'Minimalist', 'Industrial', 'Scandinavian', 'Rustic', 'Mediterranean', 'Colonial'];
+    
+    const views = ['Park View', 'Garden View', 'River View', 'City View', 'Mountain View', 'No View', 
+                  'Sea View', 'Lake View', 'Forest View'];
+    
+    const furnishings = ['Furnished', 'Unfurnished', 'Part-Furnished'];
+    
+    // Generate additional properties to reach 125 total
+    const additionalPropertiesNeeded = 125 - baseProperties.length;
+    console.log(`Generating ${additionalPropertiesNeeded} additional properties`);
+    
+    const embeddingPromises: Promise<PropertyEmbedding | null>[] = [];
+    
+    for (let i = 0; i < additionalPropertiesNeeded; i++) {
+      const id = baseProperties.length + i + 1;
+      const location = locations[Math.floor(Math.random() * locations.length)];
+      const type = types[Math.floor(Math.random() * types.length)];
+      const style = styles[Math.floor(Math.random() * styles.length)];
+      const bedrooms = Math.floor(Math.random() * 6) + 1;
+      const bathrooms = Math.floor(Math.random() * 4) + 1;
+      const price = Math.floor(Math.random() * 2000000) + 300000;
+      const view = views[Math.floor(Math.random() * views.length)];
+      const furnishing = furnishings[Math.floor(Math.random() * furnishings.length)];
+      
+      // Create a title
+      const title = `${style} ${bedrooms}-bedroom ${type} in ${location}`;
+      
+      // Create a comprehensive description
+      const description = `A ${style.toLowerCase()} ${type.toLowerCase()} located in ${location}, ` +
+                        `featuring ${bedrooms} bedroom${bedrooms > 1 ? 's' : ''}, ` +
+                        `${bathrooms} bathroom${bathrooms > 1 ? 's' : ''}, with a ${view.toLowerCase()}, ` +
+                        `and is ${furnishing.toLowerCase()}. This property offers a great blend of style and comfort ` +
+                        `with modern amenities and an ideal location.`;
+      
+      const coordinates = getCoordinates(location);
+      
+      const property: PropertyWithCoordinates = {
+        id,
+        title,
+        description,
+        location,
+        type,
+        style,
+        bedrooms,
+        bathrooms,
+        price,
+        view,
+        furnishing,
+        embedding: null,
+        coordinates
+      };
+      
+      // Store the property
+      this.properties.set(property.id.toString(), property);
+      
+      // Generate embedding
+      const textToEmbed = `${property.title}. ${property.description}. ${property.type} in ${property.location}. ` +
+                        `${property.style} style. ${property.bedrooms} bedrooms. ${property.bathrooms} bathrooms. ` +
+                        `${property.view} view. ${property.furnishing}.`;
+      
+      // Create embedding promise
+      const promise = getEmbedding(textToEmbed)
+        .then(embedding => {
+          this.propertyEmbeddings.set(property.id.toString(), embedding);
+          return { id: property.id.toString(), embedding };
+        })
+        .catch(error => {
+          console.error(`Error generating embedding for property ${property.id}: ${error}`);
+          return null;
+        });
+      
+      embeddingPromises.push(promise);
+      
+      // For throttling API calls if needed
+      if (i % 10 === 0 && i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    // Wait for all embedding promises to resolve
+    const embeddings = await Promise.all(embeddingPromises);
+    const validEmbeddings = embeddings.filter((e): e is PropertyEmbedding => e !== null);
+    
+    // Upsert vectors into Pinecone
+    if (validEmbeddings.length > 0) {
+      try {
+        console.log(`Upserting ${validEmbeddings.length} vectors into Pinecone index`);
+        await upsertVectors(validEmbeddings);
+        console.log(`Successfully upserted vectors into Pinecone index`);
+      } catch (error) {
+        console.error("Error upserting vectors into Pinecone:", error);
+      }
+    }
+    
+    console.log(`Expanded dataset to ${this.properties.size} properties total`);
+
+    // Pre-generate property images
+    await this.preGeneratePropertyImages();
+  }
+  
+  /**
+   * Pre-generate property images for all properties
+   */
+  private async preGeneratePropertyImages(): Promise<void> {
+    try {
+      // Import image generation service
+      const { createPropertyPrompt } = await import('./services/image-generation');
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Create images directory
+      const imagesDir = path.default.join(process.cwd(), "client", "public", "generated-images");
+      if (!fs.default.existsSync(imagesDir)) {
+        fs.default.mkdirSync(imagesDir, { recursive: true });
+      }
+      
+      // For each property, generate or copy a preset image
+      const properties = Array.from(this.properties.values());
+      console.log(`Pre-generating images for ${properties.length} properties`);
+      
+      // We'll create a fixed set of pre-generated images that we'll assign to properties
+      // This is to work within OpenAI API rate limits
+      const propertyTypeImages: Record<string, string> = {
+        'House': '/preset-house.jpg',
+        'Flat': '/preset-flat.jpg',
+        'Bungalow': '/preset-bungalow.jpg',
+        'Penthouse': '/preset-penthouse.jpg',
+        'Townhouse': '/preset-townhouse.jpg',
+        'Studio': '/preset-studio.jpg',
+        'Cottage': '/preset-cottage.jpg',
+        'Duplex': '/preset-duplex.jpg',
+        'Mansion': '/preset-mansion.jpg'
+      };
+      
+      // Copy preset images to generated-images directory
+      for (const [type, imagePath] of Object.entries(propertyTypeImages)) {
+        const sourceImagePath = path.default.join(process.cwd(), "client", "public", "preset-images", imagePath);
+        // If source exists, make sure we copy it (but in real use, we'd pre-create these images)
+        try {
+          if (!fs.default.existsSync(sourceImagePath)) {
+            continue;
+          }
+          const destImagePath = path.default.join(imagesDir, `preset-${type.toLowerCase()}.jpg`);
+          fs.default.copyFileSync(sourceImagePath, destImagePath);
+        } catch (error) {
+          console.error(`Error copying preset image for ${type}: ${error}`);
+        }
+      }
+      
+      // Assign images to properties based on type
+      for (const property of properties) {
+        const propertyType = property.type;
+        const filename = `property-${property.id}-${Date.now()}.jpg`;
+        const filepath = path.default.join(imagesDir, filename);
+        
+        // Use a preset image based on property type
+        const presetImagePath = path.default.join(imagesDir, `preset-${propertyType.toLowerCase()}.jpg`);
+        
+        try {
+          // If the preset image exists, copy it as this property's image
+          if (fs.default.existsSync(presetImagePath)) {
+            fs.default.copyFileSync(presetImagePath, filepath);
+            console.log(`Created image for property ${property.id} using preset for ${propertyType}`);
+          } else {
+            // Create a placeholder file
+            fs.default.writeFileSync(filepath, 'Property Image Placeholder');
+            console.log(`Created placeholder image for property ${property.id}`);
+          }
+        } catch (error) {
+          console.error(`Error creating image for property ${property.id}: ${error}`);
+        }
+      }
+      
+      console.log('Completed pre-generating property images');
+    } catch (error) {
+      console.error('Error pre-generating property images:', error);
+    }
   }
 }
 
