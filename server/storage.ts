@@ -379,22 +379,39 @@ export class MemStorage implements IStorage {
             
             console.log(`Generated image for property ${property.id} (${generatedCount}/10 generated)`);
           } else {
-            // Create a simple placeholder file with property information
-            filename = `property-${property.id}-${Date.now()}.png`;
-            const placeholderPath = path.join(imagesDir, filename);
+            // For remaining properties, reuse a type-specific image if available
+            if (propertyTypeImages.has(propertyType)) {
+              const sourceFilename = propertyTypeImages.get(propertyType)!;
+              const sourceFilePath = path.join(imagesDir, sourceFilename);
+              
+              // Create a new filename for this property
+              filename = `property-${property.id}-${Date.now()}.png`;
+              const targetFilePath = path.join(imagesDir, filename);
+              
+              // Copy the file
+              fs.copyFileSync(sourceFilePath, targetFilePath);
+              console.log(`Reused image of type ${propertyType} for property ${property.id}`);
+            } else {
+              // If no image for this type exists at all, create a basic property indicator SVG
+              filename = `property-${property.id}-${Date.now()}.svg`;
+              const placeholderPath = path.join(imagesDir, filename);
+              
+              // Create a simple SVG for the property
+              const svg = `
+              <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+                <rect width="1024" height="1024" fill="#f0f4f8"/>
+                <rect x="50" y="50" width="924" height="924" fill="#e1e8ed" rx="20" ry="20"/>
+                <rect x="150" y="150" width="724" height="524" fill="#d1dbe3" rx="10" ry="10"/>
+                <text x="512" y="400" font-family="Arial" font-size="32" text-anchor="middle" fill="#4a5568">${property.type}</text>
+                <text x="512" y="450" font-family="Arial" font-size="28" text-anchor="middle" fill="#4a5568">${property.location}</text>
+                <text x="512" y="500" font-family="Arial" font-size="24" text-anchor="middle" fill="#4a5568">${property.bedrooms} bed, ${property.bathrooms} bath</text>
+                <text x="512" y="750" font-family="Arial" font-size="36" font-weight="bold" text-anchor="middle" fill="#2d3748">£${property.price.toLocaleString()}</text>
+              </svg>`;
+              
+              fs.writeFileSync(placeholderPath, svg);
+              console.log(`Created SVG placeholder for property ${property.id}`);
+            }
             
-            // Since we can't use canvas in Node.js without additional packages,
-            // we'll create a simple placeholder text file
-            const placeholderText = 
-              `Property Placeholder\n` +
-              `ID: ${property.id}\n` +
-              `Type: ${property.type}\n` +
-              `Location: ${property.location}\n` +
-              `This is a placeholder image until actual property images are generated.`;
-            
-            fs.writeFileSync(placeholderPath, placeholderText);
-            
-            console.log(`Created placeholder file for property ${property.id}`);
           }
         } catch (error) {
           console.error(`Error generating image for property ${property.id}:`, error);
