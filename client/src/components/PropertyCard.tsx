@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { SearchResult } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { MapPin, Building, Hotel, CloudUpload, Brush, Sofa, Mountain, CheckCircle2, ImageIcon, Loader2 } from "lucide-react";
+import { MapPin, Building, Hotel, CloudUpload, Brush, Sofa, Mountain, CheckCircle2, ImageIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface PropertyCardProps {
@@ -13,39 +12,10 @@ interface PropertyCardProps {
 export function PropertyCard({ property }: PropertyCardProps) {
   // States for image handling
   const [imageFilename, setImageFilename] = useState<string | null>(null);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [imageError, setImageError] = useState<string | null>(null);
 
   // Format numbers with commas
   const numberWithCommas = (x: number) => {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
-
-  // Function to generate an image for the property
-  const generateImage = async () => {
-    setIsGeneratingImage(true);
-    setImageError(null);
-    
-    try {
-      // Define the response type to match the API
-      interface ImageResponse {
-        message: string;
-        filename: string;
-      }
-      
-      const response = await apiRequest<ImageResponse>(`/api/property/image/${property.id}`, {
-        method: 'POST'
-      });
-      
-      if (response && response.filename) {
-        setImageFilename(response.filename);
-      }
-    } catch (error) {
-      console.error('Error generating image:', error);
-      setImageError('Failed to generate image. Please try again.');
-    } finally {
-      setIsGeneratingImage(false);
-    }
   };
 
   // Check if images already exist on component mount
@@ -65,7 +35,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
           setImageFilename(response.filename);
         }
       } catch (error) {
-        // Silently fail - we'll just show the generate button
+        // Silently fail - we'll just show a placeholder
         console.log('No existing image found');
       }
     };
@@ -86,37 +56,12 @@ export function PropertyCard({ property }: PropertyCardProps) {
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center">
-              {isGeneratingImage ? (
-                <div className="flex flex-col items-center gap-2 text-gray-500">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <span className="text-sm">Generating property image...</span>
-                </div>
-              ) : (
-                <>
-                  <div className="flex flex-col items-center text-center">
-                    <ImageIcon className="h-12 w-12 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-500 mb-3 max-w-[80%]">
-                      This property doesn't have an image yet
-                    </span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={generateImage}
-                      className="bg-white hover:bg-blue-50"
-                    >
-                      <ImageIcon className="mr-2 h-4 w-4" />
-                      Generate AI Image
-                    </Button>
-                    {imageError && (
-                      <div className="text-red-500 text-xs mt-2 max-w-[80%]">
-                        {imageError.includes("rate limit") ? 
-                          "OpenAI API rate limit reached. Please try again later." : 
-                          imageError}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+              <div className="flex flex-col items-center text-center">
+                <ImageIcon className="h-12 w-12 text-gray-400 mb-2" />
+                <span className="text-sm text-gray-500 mb-3 max-w-[80%]">
+                  Property thumbnail not available
+                </span>
+              </div>
             </div>
           )}
         </div>
