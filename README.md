@@ -92,6 +92,82 @@ PINECONE_INDEX_NAME=property-listings-index
 
 4. Open your browser and navigate to http://localhost:5000
 
+## 🌎 Deployment to Vercel
+
+This application is configured for easy deployment to Vercel.
+
+### Deployment Steps
+
+1. Create a Vercel account at [vercel.com](https://vercel.com) if you don't have one
+
+2. Install the Vercel CLI:
+   ```bash
+   npm install -g vercel
+   ```
+
+3. Log in to Vercel:
+   ```bash
+   vercel login
+   ```
+
+4. Deploy to Vercel:
+   ```bash
+   vercel
+   ```
+
+5. Add environment variables to your Vercel project:
+   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `PINECONE_API_KEY`: Your Pinecone API key
+   
+   You can add these in the Vercel dashboard under Settings > Environment Variables, or using the CLI:
+   ```bash
+   vercel env add OPENAI_API_KEY
+   vercel env add PINECONE_API_KEY
+   ```
+
+6. For production deployment:
+   ```bash
+   vercel --prod
+   ```
+
+### Important Notes for Vercel Deployment
+
+- The first request to your deployed app might be slow due to the cold start of the serverless function
+- The application has a fallback search mechanism that works even if OpenAI API rate limits are hit
+- Make sure the Pinecone index is properly set up before deploying
+
+### Troubleshooting Vercel Deployment
+
+If you encounter issues during deployment:
+
+1. **CSV Loading Issues**:
+   - Verify that the CSV file is correctly included in your deployment
+   - Check the function logs in the Vercel dashboard for any file access errors
+
+2. **API Key Issues**:
+   - Ensure that both `OPENAI_API_KEY` and `PINECONE_API_KEY` are correctly set in Vercel's environment variables
+   - Make sure the API keys have the necessary permissions and aren't expired
+
+3. **Timeout Issues**:
+   - If operations take too long, consider pre-processing the embeddings and storing them
+   - The serverless function timeout is set to 30 seconds; complex operations may require optimization
+
+4. **Memory Limit Issues**:
+   - The memory limit is set to 1024MB which should be sufficient, but if you see out-of-memory errors, you might need to optimize data loading or processing
+
+5. **Rate Limiting**:
+   - The application includes fallback text search for when OpenAI rate limits are hit
+   - For production use with high traffic, consider upgrading your OpenAI plan
+
+6. **Index Issues**:
+   - If Pinecone searches fail, check that your index is correctly configured with appropriate dimensions (1536 for text-embedding-ada-002)
+   - Verify that data has been successfully loaded into the index
+
+For more detailed debugging, you can use the Vercel CLI to view logs:
+```bash
+vercel logs your-project-name
+```
+
 ## 📊 Data Structure
 
 The application uses a property listings CSV with the following fields:
