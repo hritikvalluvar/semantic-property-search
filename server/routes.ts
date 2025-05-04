@@ -147,14 +147,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
           specificAttributes.type = typeMatches;
         }
         
-        // Generate embedding for query
-        const queryEmbedding = await getEmbedding(query);
+        let queryEmbedding;
+        let searchResults: { id: string; score: number }[] = [];
         
-        // Search Pinecone
-        const searchResults = await searchVectors(queryEmbedding, 50); // Increase to get more candidates
+        try {
+          // Generate embedding for query
+          queryEmbedding = await getEmbedding(query);
+          
+          // Search Pinecone
+          searchResults = await searchVectors(queryEmbedding, 50); // Increase to get more candidates
+        } catch (error: any) {
+          console.error("Search error:", error);
+          
+          // If we hit a rate limit or other API error, fall back to basic search
+          if (error.status === 429 || !queryEmbedding) {
+            console.log("Falling back to basic search due to API limits");
+            // We'll skip the vector search but still apply filters below
+            searchResults = [];
+          } else {
+            // For other errors, return the error to the client
+            return res.status(500).json({ 
+              message: "An error occurred during search",
+              error: error.message
+            });
+          }
+        }
         
-        // Get full property details
-        const properties = await storage.getPropertiesByIds(searchResults.map(r => r.id));
+        let properties = [];
+        
+        if (searchResults.length > 0) {
+          // Get full property details from search results
+          properties = await storage.getPropertiesByIds(searchResults.map(r => r.id));
+        } else {
+          // Fallback: Get all properties when we can't use vector search
+          // We'll filter these based on text query and attributes later
+          properties = await storage.getAllProperties();
+        }
         
         // Combine search results with property data and apply attribute filters
         let results = searchResults.map(result => {

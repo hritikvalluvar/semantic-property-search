@@ -153,24 +153,31 @@ export function PropertyFilters({
               </span>
             </div>
             <div>
-              {/* Simple Range Input Version */}
-              <div className="p-2 flex items-center">
+              {/* Improved Range Input Version */}
+              <div className="p-2">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="px-2 py-1 bg-gray-100 rounded text-sm">
+                    Min: {filters.bedrooms[0]}
+                  </div>
+                  <div className="px-2 py-1 bg-gray-100 rounded text-sm">
+                    Max: {filters.bedrooms[1]}
+                  </div>
+                </div>
                 <input 
                   type="range" 
                   min={filterOptions.bedrooms.min} 
-                  max={filters.bedrooms[1]} 
+                  max={filters.bedrooms[1] - 1} 
                   value={filters.bedrooms[0]} 
                   onChange={(e) => updateRangeFilter('bedrooms', 0, Number(e.target.value))}
-                  className="w-1/2"
+                  className="w-full mb-2"
                 />
-                <span className="mx-2">to</span>
                 <input 
                   type="range" 
-                  min={filters.bedrooms[0]} 
+                  min={filters.bedrooms[0] + 1} 
                   max={filterOptions.bedrooms.max} 
                   value={filters.bedrooms[1]} 
                   onChange={(e) => updateRangeFilter('bedrooms', 1, Number(e.target.value))}
-                  className="w-1/2"
+                  className="w-full"
                 />
               </div>
               <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -189,24 +196,31 @@ export function PropertyFilters({
               </span>
             </div>
             <div>
-              {/* Simple Range Input Version */}
-              <div className="p-2 flex items-center">
+              {/* Improved Range Input Version */}
+              <div className="p-2">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="px-2 py-1 bg-gray-100 rounded text-sm">
+                    Min: {filters.bathrooms[0]}
+                  </div>
+                  <div className="px-2 py-1 bg-gray-100 rounded text-sm">
+                    Max: {filters.bathrooms[1]}
+                  </div>
+                </div>
                 <input 
                   type="range" 
                   min={filterOptions.bathrooms.min} 
-                  max={filters.bathrooms[1]} 
+                  max={filters.bathrooms[1] - 1} 
                   value={filters.bathrooms[0]} 
                   onChange={(e) => updateRangeFilter('bathrooms', 0, Number(e.target.value))}
-                  className="w-1/2"
+                  className="w-full mb-2"
                 />
-                <span className="mx-2">to</span>
                 <input 
                   type="range" 
-                  min={filters.bathrooms[0]} 
+                  min={filters.bathrooms[0] + 1} 
                   max={filterOptions.bathrooms.max} 
                   value={filters.bathrooms[1]} 
                   onChange={(e) => updateRangeFilter('bathrooms', 1, Number(e.target.value))}
-                  className="w-1/2"
+                  className="w-full"
                 />
               </div>
               <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -225,25 +239,32 @@ export function PropertyFilters({
               </span>
             </div>
             <div>
-              {/* Simple Range Input Version */}
-              <div className="p-2 flex items-center">
+              {/* Improved Range Input Version */}
+              <div className="p-2">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="px-2 py-1 bg-gray-100 rounded text-sm">
+                    Min: £{numberWithCommas(filters.price[0])}
+                  </div>
+                  <div className="px-2 py-1 bg-gray-100 rounded text-sm">
+                    Max: £{numberWithCommas(filters.price[1])}
+                  </div>
+                </div>
                 <input 
                   type="range" 
                   min={filterOptions.price.min} 
-                  max={filters.price[1]} 
+                  max={filters.price[1] - 50000} 
                   value={filters.price[0]} 
                   onChange={(e) => updateRangeFilter('price', 0, Number(e.target.value))}
-                  className="w-1/2"
+                  className="w-full mb-2"
                   step={50000}
                 />
-                <span className="mx-2">to</span>
                 <input 
                   type="range" 
-                  min={filters.price[0]} 
+                  min={filters.price[0] + 50000} 
                   max={filterOptions.price.max} 
                   value={filters.price[1]} 
                   onChange={(e) => updateRangeFilter('price', 1, Number(e.target.value))}
-                  className="w-1/2"
+                  className="w-full"
                   step={50000}
                 />
               </div>
