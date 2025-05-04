@@ -185,15 +185,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Combine search results with property data and apply attribute filters
-        let results = searchResults.map(result => {
-          const property = properties.find(p => p.id.toString() === result.id);
-          if (!property) return null;
-          
-          return {
+        let results: any[] = [];
+        
+        if (searchResults.length > 0) {
+          // If we have search results from vector search, use those
+          results = searchResults.map(result => {
+            const property = properties.find((p: Property) => p.id.toString() === result.id);
+            if (!property) return null;
+            
+            return {
+              ...property,
+              score: result.score
+            };
+          }).filter(item => item !== null) as any[];
+        } else {
+          // If we're using fallback search mode, convert all properties to results
+          // We'll assign base scores for now and rerank them below
+          results = properties.map((property: Property) => ({
             ...property,
-            score: result.score
-          };
-        }).filter(item => item !== null) as any[];
+            score: 0.5 // Default middle score, will be adjusted based on matches
+          }));
+          
+          // Apply basic text search if there's a query
+          if (query.trim()) {
+            const normalizedQuery = query.toLowerCase();
+            
+            // Simple text matching for fallback mode
+            results = results.filter(property => {
+              // Check title, description, location, etc.
+              return property.title.toLowerCase().includes(normalizedQuery) ||
+                     property.description.toLowerCase().includes(normalizedQuery) ||
+                     property.location.toLowerCase().includes(normalizedQuery) ||
+                     property.type.toLowerCase().includes(normalizedQuery) ||
+                     property.style.toLowerCase().includes(normalizedQuery) ||
+                     property.view.toLowerCase().includes(normalizedQuery) ||
+                     property.furnishing.toLowerCase().includes(normalizedQuery);
+            });
+            
+            // Boost scores based on text matches
+            results.forEach(result => {
+              const titleMatch = result.title.toLowerCase().includes(normalizedQuery);
+              const descMatch = result.description.toLowerCase().includes(normalizedQuery);
+              const locationMatch = result.location.toLowerCase().includes(normalizedQuery);
+              const typeMatch = result.type.toLowerCase().includes(normalizedQuery);
+              
+              // Add boosts based on match quality
+              if (titleMatch) result.score += 0.3;
+              if (descMatch) result.score += 0.1;
+              if (locationMatch) result.score += 0.2;
+              if (typeMatch) result.score += 0.2;
+            });
+          }
+        }
         
         // Apply exact attribute matching and boost scores for matches
         if (Object.keys(specificAttributes).length > 0) {

@@ -21,6 +21,7 @@ export interface IStorage {
   getFilterOptions(): Promise<FilterOptions>;
   getPropertyById(id: number): Promise<Property | undefined>;
   getPropertiesByIds(ids: string[]): Promise<Property[]>;
+  getAllProperties(): Promise<Property[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -306,7 +307,11 @@ export class MemStorage implements IStorage {
   async getPropertiesByIds(ids: string[]): Promise<Property[]> {
     return ids
       .map(id => this.properties.get(id))
-      .filter(p => p !== undefined) as Property[];
+      .filter((p): p is Property => p !== undefined);
+  }
+  
+  async getAllProperties(): Promise<Property[]> {
+    return Array.from(this.properties.values());
   }
   
   /**
