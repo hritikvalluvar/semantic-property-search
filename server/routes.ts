@@ -5,6 +5,8 @@ import { getEmbedding } from "./services/openai";
 import { searchVectors } from "./services/pinecone";
 import { generatePropertyImage, getExistingPropertyImage } from "./services/image-generation";
 import { z } from "zod";
+import { type Property } from "@shared/schema";
+import { calculateDistance, calculateProximityBoost, parseLocationQuery } from './services/geocoding';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes for property search
@@ -162,6 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // If we hit a rate limit or other API error, fall back to basic search
           if (error.status === 429 || !queryEmbedding) {
             console.log("Falling back to basic search due to API limits");
+            console.log("Query: ", query);
             // We'll skip the vector search but still apply filters below
             searchResults = [];
           } else {
@@ -178,10 +181,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (searchResults.length > 0) {
           // Get full property details from search results
           properties = await storage.getPropertiesByIds(searchResults.map(r => r.id));
+          console.log(`Got ${properties.length} properties from search results`);
         } else {
           // Fallback: Get all properties when we can't use vector search
           // We'll filter these based on text query and attributes later
           properties = await storage.getAllProperties();
+          console.log(`Fallback: Got ${properties.length} properties from getAllProperties`);
         }
         
         // Combine search results with property data and apply attribute filters
