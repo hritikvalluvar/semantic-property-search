@@ -392,24 +392,10 @@ export class MemStorage implements IStorage {
               fs.copyFileSync(sourceFilePath, targetFilePath);
               console.log(`Reused image of type ${propertyType} for property ${property.id}`);
             } else {
-              // If no image for this type exists at all, create a basic property indicator SVG
-              filename = `property-${property.id}-${Date.now()}.svg`;
-              const placeholderPath = path.join(imagesDir, filename);
-              
-              // Create a simple SVG for the property
-              const svg = `
-              <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-                <rect width="1024" height="1024" fill="#f0f4f8"/>
-                <rect x="50" y="50" width="924" height="924" fill="#e1e8ed" rx="20" ry="20"/>
-                <rect x="150" y="150" width="724" height="524" fill="#d1dbe3" rx="10" ry="10"/>
-                <text x="512" y="400" font-family="Arial" font-size="32" text-anchor="middle" fill="#4a5568">${property.type}</text>
-                <text x="512" y="450" font-family="Arial" font-size="28" text-anchor="middle" fill="#4a5568">${property.location}</text>
-                <text x="512" y="500" font-family="Arial" font-size="24" text-anchor="middle" fill="#4a5568">${property.bedrooms} bed, ${property.bathrooms} bath</text>
-                <text x="512" y="750" font-family="Arial" font-size="36" font-weight="bold" text-anchor="middle" fill="#2d3748">£${property.price.toLocaleString()}</text>
-              </svg>`;
-              
-              fs.writeFileSync(placeholderPath, svg);
-              console.log(`Created SVG placeholder for property ${property.id}`);
+              // If no image for this type exists at all, create a better SVG placeholder
+              const { createFallbackSvg } = await import('./services/image-generation');
+              filename = createFallbackSvg(property);
+              console.log(`Created enhanced SVG placeholder for property ${property.id}`);
             }
             
           }

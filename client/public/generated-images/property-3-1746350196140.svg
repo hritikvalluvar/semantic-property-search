@@ -1,0 +1,10 @@
+
+  <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+    <rect width="1024" height="1024" fill="#f0f4f8"/>
+    <rect x="50" y="50" width="924" height="924" fill="#e1e8ed" rx="20" ry="20"/>
+    <rect x="150" y="150" width="724" height="524" fill="#d1dbe3" rx="10" ry="10"/>
+    <text x="512" y="400" font-family="Arial" font-size="32" text-anchor="middle" fill="#4a5568">Bungalow</text>
+    <text x="512" y="450" font-family="Arial" font-size="28" text-anchor="middle" fill="#4a5568">Greenwich</text>
+    <text x="512" y="500" font-family="Arial" font-size="24" text-anchor="middle" fill="#4a5568">3 bed, 1 bath</text>
+    <text x="512" y="750" font-family="Arial" font-size="36" font-weight="bold" text-anchor="middle" fill="#2d3748">£747,656</text>
+  </svg>

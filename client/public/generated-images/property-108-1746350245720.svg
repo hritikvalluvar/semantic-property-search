@@ -1,0 +1,48 @@
+
+    <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+      <!-- Background gradient based on property view -->
+      <defs>
+        <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#edf2f7" />
+          <stop offset="100%" stop-color="#e2e8f0" />
+        </linearGradient>
+        <linearGradient id="propertyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ed8936" />
+          <stop offset="100%" stop-color="#dd6b20" />
+        </linearGradient>
+        <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="10" />
+          <feOffset dx="5" dy="5" result="offsetblur" />
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="0.2" />
+          </feComponentTransfer>
+          <feMerge>
+            <feMergeNode />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      
+      <!-- Main background -->
+      <rect width="1024" height="1024" fill="url(#bgGradient)" />
+      
+      <!-- Property card -->
+      <rect x="50" y="50" width="924" height="924" fill="#ffffff" rx="30" ry="30" filter="url(#dropShadow)" />
+      
+      <!-- Property image area -->
+      <rect x="100" y="100" width="824" height="500" fill="url(#propertyGradient)" rx="20" ry="20" />
+      
+      <!-- Property type icon -->
+      <path d="M350 350 L512 250 L674 350 L674 500 L350 500 Z" fill="#ffffff" fill-opacity="0.5" />
+             <rect x="450" y="400" width="124" height="100" fill="#ffffff" fill-opacity="0.8" />
+      
+      <!-- Property details -->
+      <text x="512" y="650" font-family="Arial" font-size="40" font-weight="bold" text-anchor="middle" fill="#1a202c">Rustic Cottage</text>
+      <text x="512" y="700" font-family="Arial" font-size="32" text-anchor="middle" fill="#4a5568">Shoreditch</text>
+      <text x="512" y="750" font-family="Arial" font-size="28" text-anchor="middle" fill="#718096">1 bed, 4 bath · Forest View</text>
+      <text x="512" y="820" font-family="Arial" font-size="32" font-weight="bold" text-anchor="middle" fill="#2d3748">£2,192,775</text>
+      <text x="512" y="870" font-family="Arial" font-size="24" text-anchor="middle" fill="#718096">Unfurnished</text>
+      
+      <!-- Property ID -->
+      <text x="950" y="990" font-family="Arial" font-size="16" text-anchor="end" fill="#a0aec0">ID: 108</text>
+    </svg>
