@@ -34,17 +34,18 @@ export function PropertySearch() {
   });
 
   useEffect(() => {
-    if (filterData) {
-      setFilterOptions(filterData);
+    if (filterData && typeof filterData === 'object' && 'bedrooms' in filterData) {
+      const typedFilterData = filterData as FilterOptions;
+      setFilterOptions(typedFilterData);
       
       // Initialize filters with default values
       setFilters({
         type: [],
         style: [],
         location: [],
-        bedrooms: [filterData.bedrooms.min, filterData.bedrooms.max],
-        bathrooms: [filterData.bathrooms.min, filterData.bathrooms.max],
-        price: [filterData.price.min, filterData.price.max],
+        bedrooms: [typedFilterData.bedrooms.min, typedFilterData.bedrooms.max],
+        bathrooms: [typedFilterData.bathrooms.min, typedFilterData.bathrooms.max],
+        price: [typedFilterData.price.min, typedFilterData.price.max],
         view: [],
         furnishing: []
       });
@@ -57,10 +58,20 @@ export function PropertySearch() {
   // Search mutation
   const { mutate: searchProperties, isPending: isSearching } = useMutation({
     mutationFn: async (query: string) => {
-      return await apiRequest('/api/property/search', {
+      const response = await fetch('/api/property/search', {
         method: 'POST',
-        body: { query }
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query })
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || response.statusText);
+      }
+      
+      return response.json();
     },
     onSuccess: (data: SearchResult[]) => {
       setApiKeyError(null); // Clear any previous API key errors
