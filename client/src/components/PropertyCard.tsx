@@ -93,17 +93,28 @@ export function PropertyCard({ property }: PropertyCardProps) {
                 </div>
               ) : (
                 <>
-                  <ImageIcon className="h-12 w-12 text-gray-400 mb-2" />
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={generateImage}
-                    className="bg-white hover:bg-blue-50"
-                  >
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    Generate AI Image
-                  </Button>
-                  {imageError && <p className="text-red-500 text-xs mt-2">{imageError}</p>}
+                  <div className="flex flex-col items-center text-center">
+                    <ImageIcon className="h-12 w-12 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500 mb-3 max-w-[80%]">
+                      This property doesn't have an image yet
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={generateImage}
+                      className="bg-white hover:bg-blue-50"
+                    >
+                      <ImageIcon className="mr-2 h-4 w-4" />
+                      Generate AI Image
+                    </Button>
+                    {imageError && (
+                      <div className="text-red-500 text-xs mt-2 max-w-[80%]">
+                        {imageError.includes("rate limit") ? 
+                          "OpenAI API rate limit reached. Please try again later." : 
+                          imageError}
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>

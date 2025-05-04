@@ -23,16 +23,25 @@ export async function generatePropertyImage(property: Property): Promise<{ filen
     const prompt = createPropertyPrompt(property);
     
     // Generate the image using DALL-E
-    const response = await openai.images.generate({
-      model: "dall-e-3", // The newest OpenAI image model is "dall-e-3" which was released after the knowledge cutoff
-      prompt: prompt,
-      n: 1, // Generate 1 image
-      size: "1024x1024", // Standard size
-      quality: "standard",
-    });
-
-    // Get the image URL
-    const imageUrl = response.data?.[0]?.url;
+    let imageUrl;
+    try {
+      const response = await openai.images.generate({
+        model: "dall-e-3", // The newest OpenAI image model is "dall-e-3" which was released after the knowledge cutoff
+        prompt: prompt,
+        n: 1, // Generate 1 image
+        size: "1024x1024", // Standard size
+        quality: "standard",
+      });
+      
+      // Get the image URL
+      imageUrl = response.data?.[0]?.url;
+    } catch (error: any) {
+      console.error("OpenAI image generation error:", error);
+      if (error.status === 429) {
+        throw new Error("OpenAI rate limit exceeded. Please try again later.");
+      }
+      throw error;
+    }
     
     if (!imageUrl) {
       throw new Error("No image URL returned from OpenAI");
