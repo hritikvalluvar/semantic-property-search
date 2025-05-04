@@ -60,106 +60,162 @@ export class MemStorage implements IStorage {
       return;
     }
 
-    // Check for production or development environment
-    const isProd = process.env.NODE_ENV === 'production';
-    
-    // Path to CSV file - for production, we'll use mock data
-    // In Vercel serverless functions, file system access is limited, so we use mock data in production
-    const csvFilePath = path.resolve(process.cwd(), 'semantic_property_listings.csv');
-
-    // In production or if file doesn't exist, use mock data
-    if (isProd || !fs.existsSync(csvFilePath)) {
-      console.log(`Using mock data (Production: ${isProd}, File exists: ${fs.existsSync(csvFilePath)})`);
-      // Load mock data instead
-      await this.loadMockPropertyData();
-      return;
-    }
-    
-    console.log(`Loading property data from CSV: ${csvFilePath}`);
-
-    // Parse CSV
-    const parser = fs
-      .createReadStream(csvFilePath)
-      .pipe(parse({
-        columns: true,
-        skip_empty_lines: true
-      }));
-
-    const properties: Property[] = [];
-    const embeddingPromises: Promise<PropertyEmbedding | null>[] = [];
-    
-    // Import geocoding service
-    const { getCoordinates } = await import('./services/geocoding');
-    
-    // Process each row
-    for await (const row of parser) {
-      // Get coordinates for the location
-      const coordinates = getCoordinates(row.location);
+    // For Replit deployment - load the CSV file using synchronous methods
+    // to speed up startup time and make the API available immediately
+    try {
+      console.log('Loading property data from CSV: semantic_property_listings.csv');
       
-      const property: PropertyWithCoordinates = {
-        id: parseInt(row.id),
-        title: row.title,
-        description: row.description,
-        location: row.location,
-        type: row.type,
-        style: row.style,
-        bedrooms: parseInt(row.bedrooms),
-        bathrooms: parseInt(row.bathrooms),
-        price: parseInt(row.price),
-        view: row.view,
-        furnishing: row.furnishing,
-        embedding: row.embedding || null,
-        coordinates  // Add coordinates to the property
-      };
+      // Path to CSV file
+      const csvFilePath = path.resolve(process.cwd(), 'semantic_property_listings.csv');
       
-      this.properties.set(property.id.toString(), property);
-      properties.push(property);
+      // Check if file exists - if not, use mock data
+      if (!fs.existsSync(csvFilePath)) {
+        console.log('CSV file not found, loading mock data instead');
+        await this.loadMockPropertyData();
+        return;
+      }
       
-      // If embedding exists in CSV, parse it
-      if (property.embedding) {
-        try {
-          const embeddingArray = JSON.parse(property.embedding);
-          this.propertyEmbeddings.set(property.id.toString(), embeddingArray);
-        } catch (error) {
-          console.error(`Error parsing embedding for property ${property.id}: ${error}`);
+      // Import geocoding service
+      const { getCoordinates } = await import('./services/geocoding');
+      
+      // Read CSV file with line-by-line approach for more reliability
+      const csvData = fs.readFileSync(csvFilePath, 'utf8');
+      const lines = csvData.split('\n');
+      
+      // Skip the header row and parse manually
+      const headers = lines[0].split(',');
+      const records: Array<Record<string, string>> = [];
+      
+      // Process each line (skip header)
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue; // Skip empty lines
+        
+        // Handle CSV with quoted fields that may contain commas
+        const values: string[] = [];
+        let currentValue = '';
+        let inQuotes = false;
+        
+        for (const char of lines[i]) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            values.push(currentValue);
+            currentValue = '';
+          } else {
+            currentValue += char;
+          }
         }
-      } else {
-        // Generate embedding if it doesn't exist
-        const textToEmbed = `${property.title}. ${property.description}. ${property.type} in ${property.location}. ${property.style} style. ${property.bedrooms} bedrooms. ${property.bathrooms} bathrooms. ${property.view} view. ${property.furnishing}.`;
+        values.push(currentValue); // Add the last value
         
-        const promise = getEmbedding(textToEmbed)
-          .then(embedding => {
-            this.propertyEmbeddings.set(property.id.toString(), embedding);
-            const propertyEmbedding: PropertyEmbedding = {
-              id: property.id.toString(),
-              embedding
-            };
-            return propertyEmbedding;
-          })
-          .catch(error => {
-            console.error(`Error generating embedding for property ${property.id}: ${error}`);
-            return null;
-          });
+        // Create object from headers and values
+        const record: Record<string, string> = {};
+        for (let j = 0; j < headers.length; j++) {
+          const header = headers[j].replace(/"/g, '').trim();
+          record[header] = values[j] ? values[j].replace(/"/g, '').trim() : '';
+        }
         
-        embeddingPromises.push(promise);
+        records.push(record);
       }
-    }
-    
-    // Wait for all embedding promises to resolve
-    const embeddings = await Promise.all(embeddingPromises);
-    const validEmbeddings = embeddings.filter((e): e is PropertyEmbedding => e !== null);
-    
-    // Upsert vectors into Pinecone
-    if (validEmbeddings.length > 0) {
-      try {
-        console.log(`Upserting ${validEmbeddings.length} vectors into Pinecone index`);
-        await upsertVectors(validEmbeddings);
-        console.log(`Successfully upserted vectors into Pinecone index`);
-      } catch (error) {
-        console.error("Error upserting vectors into Pinecone:", error);
+      
+      console.log(`Parsed CSV data with ${records.length} records`);
+      
+      // Process records
+      for (const row of records) {
+        // Get coordinates for the location
+        const coordinates = getCoordinates(row.location);
+        
+        const property: PropertyWithCoordinates = {
+          id: parseInt(row.id),
+          title: row.title,
+          description: row.description,
+          location: row.location,
+          type: row.type,
+          style: row.style,
+          bedrooms: parseInt(row.bedrooms),
+          bathrooms: parseInt(row.bathrooms),
+          price: parseInt(row.price),
+          view: row.view || 'No View',
+          furnishing: row.furnishing || 'Unfurnished',
+          embedding: row.embedding || null,
+          coordinates  // Add coordinates to the property
+        };
+        
+        this.properties.set(property.id.toString(), property);
+        
+        // If embedding exists in CSV, parse it
+        if (property.embedding) {
+          try {
+            const embeddingArray = JSON.parse(property.embedding);
+            this.propertyEmbeddings.set(property.id.toString(), embeddingArray);
+          } catch (error) {
+            console.error(`Error parsing embedding for property ${property.id}: ${error}`);
+          }
+        }
       }
-    } else {
-      console.log('No new embeddings to upsert into Pinecone');
+      
+      console.log(`Loaded ${this.properties.size} properties from CSV`);
+      
+      // For Replit deployment - process embeddings in the background
+      // after server is already up and running
+      setTimeout(async () => {
+        try {
+          // Only generate embeddings if we have API keys
+          if (!process.env.OPENAI_API_KEY || !process.env.PINECONE_API_KEY) {
+            console.log('Missing API keys, skipping embedding generation');
+            return;
+          }
+          
+          console.log('Starting embedding generation in background...');
+          const embeddingPromises: Promise<PropertyEmbedding | null>[] = [];
+          
+          // Process properties that don't have embeddings yet
+          const propertiesArray = Array.from(this.properties.values());
+          for (const property of propertiesArray) {
+            if (!this.propertyEmbeddings.has(property.id.toString())) {
+              const textToEmbed = `${property.title}. ${property.description}. ${property.type} in ${property.location}. ${property.style} style. ${property.bedrooms} bedrooms. ${property.bathrooms} bathrooms. ${property.view} view. ${property.furnishing}.`;
+              
+              const promise = getEmbedding(textToEmbed)
+                .then(embedding => {
+                  this.propertyEmbeddings.set(property.id.toString(), embedding);
+                  const propertyEmbedding: PropertyEmbedding = {
+                    id: property.id.toString(),
+                    embedding
+                  };
+                  return propertyEmbedding;
+                })
+                .catch(error => {
+                  console.error(`Error generating embedding for property ${property.id}: ${error}`);
+                  return null;
+                });
+              
+              embeddingPromises.push(promise);
+            }
+          }
+          
+          // Wait for all embedding promises to resolve
+          const embeddings = await Promise.all(embeddingPromises);
+          const validEmbeddings = embeddings.filter((e): e is PropertyEmbedding => e !== null);
+          
+          // Upsert vectors into Pinecone
+          if (validEmbeddings.length > 0) {
+            try {
+              console.log(`Upserting ${validEmbeddings.length} vectors into Pinecone index`);
+              await upsertVectors(validEmbeddings);
+              console.log(`Successfully upserted vectors into Pinecone index`);
+            } catch (error) {
+              console.error("Error upserting vectors into Pinecone:", error);
+            }
+          } else {
+            console.log('No new embeddings to upsert into Pinecone');
+          }
+        } catch (error) {
+          console.error('Error in background embedding generation:', error);
+        }
+      }, 3000); // Start after the server is up
+    } catch (error) {
+      console.error('Error loading CSV data:', error);
+      console.log('Falling back to mock data');
+      await this.loadMockPropertyData();
     }
   }
   
@@ -347,7 +403,8 @@ export class MemStorage implements IStorage {
       let errorCount = 0;
       
       // Process each property - limit to 10 actual generations to avoid rate limits
-      for (const property of properties) {
+      for (let i = 0; i < properties.length; i++) {
+        const property = properties[i];
         try {
           // Check if image already exists
           const existingImage = getExistingPropertyImage(property.id);
@@ -439,8 +496,27 @@ export class MemStorage implements IStorage {
     const baseProperties: PropertyWithCoordinates[] = [];
     const { getCoordinates } = await import('./services/geocoding');
     
-    // Process each row from the CSV
-    for await (const row of parser) {
+    // Process each row from the CSV - use callbacks for compatibility
+    const processRows = async () => {
+      const rows: any[] = [];
+      return new Promise<any[]>((resolve, reject) => {
+        parser.on('readable', function(){
+          let row;
+          while (row = parser.read()) {
+            rows.push(row);
+          }
+        });
+        parser.on('error', function(err){
+          reject(err);
+        });
+        parser.on('end', function(){
+          resolve(rows);
+        });
+      });
+    };
+    
+    const rows = await processRows();
+    for (const row of rows) {
       const coordinates = getCoordinates(row.location);
       
       const property: PropertyWithCoordinates = {

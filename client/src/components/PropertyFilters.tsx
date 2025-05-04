@@ -31,7 +31,8 @@ export function PropertyFilters({
   };
 
   // Format numbers with commas
-  const numberWithCommas = (x: number) => {
+  const numberWithCommas = (x: number | null) => {
+    if (x === null) return "0";
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
   
