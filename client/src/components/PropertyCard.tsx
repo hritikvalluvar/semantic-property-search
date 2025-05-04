@@ -1,7 +1,7 @@
 import { SearchResult } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Building, Hotel, CloudUpload, Brush, Sofa, Mountain } from "lucide-react";
+import { MapPin, Building, Hotel, CloudUpload, Brush, Sofa, Mountain, CheckCircle2 } from "lucide-react";
 
 interface PropertyCardProps {
   property: SearchResult;
@@ -17,7 +17,15 @@ export function PropertyCard({ property }: PropertyCardProps) {
     <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
       <CardContent className="p-5">
         <div className="flex justify-between items-start">
-          <h3 className="font-heading text-lg font-semibold text-gray-800">{property.title}</h3>
+          <div className="flex flex-col">
+            <h3 className="font-heading text-lg font-semibold text-gray-800">{property.title}</h3>
+            {property.exactMatch && (
+              <div className="flex items-center text-emerald-600 text-xs font-medium mt-1">
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                Exact match for your search criteria
+              </div>
+            )}
+          </div>
           <Badge variant="outline" className="bg-primary/10 text-primary border-primary/40 px-2 py-1">
             Match score: {(property.score * 100).toFixed(1)}%
           </Badge>

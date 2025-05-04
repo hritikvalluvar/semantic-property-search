@@ -48,25 +48,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { query } = validatedData;
 
       try {
+        // Extract specific attributes from the query
+        const bedroomMatch = query.match(/(\d+)[\s-]bed/i);
+        const bathroomMatch = query.match(/(\d+)[\s-]bath/i);
+        const specificAttributes: Record<string, any> = {};
+        
+        if (bedroomMatch) {
+          specificAttributes.bedrooms = parseInt(bedroomMatch[1]);
+        }
+        
+        if (bathroomMatch) {
+          specificAttributes.bathrooms = parseInt(bathroomMatch[1]);
+        }
+        
+        // Type matching
+        const typeMatches: string[] = [];
+        ['House', 'Flat', 'Apartment', 'Studio', 'Cottage', 'Bungalow', 'Penthouse', 'Townhouse'].forEach(type => {
+          if (query.toLowerCase().includes(type.toLowerCase())) {
+            typeMatches.push(type);
+          }
+        });
+        
+        if (typeMatches.length > 0) {
+          specificAttributes.type = typeMatches;
+        }
+        
         // Generate embedding for query
         const queryEmbedding = await getEmbedding(query);
         
         // Search Pinecone
-        const searchResults = await searchVectors(queryEmbedding);
+        const searchResults = await searchVectors(queryEmbedding, 50); // Increase to get more candidates
         
         // Get full property details
         const properties = await storage.getPropertiesByIds(searchResults.map(r => r.id));
         
-        // Combine search results with property data
-        const results = searchResults.map(result => {
+        // Combine search results with property data and apply attribute filters
+        let results = searchResults.map(result => {
           const property = properties.find(p => p.id.toString() === result.id);
+          if (!property) return null;
+          
           return {
             ...property,
             score: result.score
           };
-        }).filter(item => item.id !== undefined);
+        }).filter(item => item !== null) as any[];
         
-        res.json(results);
+        // Apply exact attribute matching and boost scores for matches
+        if (Object.keys(specificAttributes).length > 0) {
+          results = results.map(result => {
+            let matchBoost = 0;
+            let isExactMatch = true;
+            
+            // Check each specific attribute
+            for (const [attr, value] of Object.entries(specificAttributes)) {
+              if (attr === 'type' && Array.isArray(value)) {
+                // For type, check if any of the specified types match
+                const typeMatch = value.some(type => result.type === type);
+                if (typeMatch) {
+                  matchBoost += 0.2; // Boost score for type match
+                } else {
+                  isExactMatch = false;
+                }
+              } else if (result[attr] === value) {
+                matchBoost += 0.3; // Boost score for exact match (bedrooms, bathrooms)
+              } else {
+                isExactMatch = false;
+              }
+            }
+            
+            // Apply boost to exact matches
+            if (isExactMatch) {
+              matchBoost += 0.5;
+            }
+            
+            return {
+              ...result,
+              score: result.score + matchBoost, // Boost score
+              exactMatch: isExactMatch
+            };
+          });
+          
+          // If we have exact matches, prioritize them
+          const exactMatches = results.filter(r => r.exactMatch);
+          if (exactMatches.length > 0) {
+            results = [...exactMatches, ...results.filter(r => !r.exactMatch)];
+          }
+        }
+        
+        // Sort by score
+        results.sort((a, b) => b.score - a.score);
+        
+        // Return top 20 results
+        res.json(results.slice(0, 20));
       } catch (error: any) {
         // Handle specific API errors
         const errorMessage = error.message || "";

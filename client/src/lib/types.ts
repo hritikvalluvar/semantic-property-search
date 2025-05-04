@@ -16,6 +16,7 @@ export interface PropertyListing {
 // Search result including match score
 export interface SearchResult extends PropertyListing {
   score: number;
+  exactMatch?: boolean;
 }
 
 // Filter state structure
