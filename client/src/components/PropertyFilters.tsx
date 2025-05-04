@@ -301,47 +301,113 @@ export function PropertyFilters({
           
           {/* View Filter */}
           <div>
-            <Label className="font-medium text-gray-700 block mb-2">View</Label>
-            <div className="flex flex-wrap gap-2">
-              {filterOptions.views.map((view) => (
-                <button 
-                  key={view}
-                  onClick={() => toggleFilter('view', view)}
-                  className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                    filters.view.includes(view) 
-                      ? 'bg-primary/10 text-primary border-primary/40' 
-                      : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                  }`}
-                >
-                  {view}
-                </button>
-              ))}
-            </div>
+            <Label className="font-medium text-gray-700 block mb-2">
+              View
+              {getActiveCount('view') > 0 && (
+                <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary">
+                  {getActiveCount('view')}
+                </Badge>
+              )}
+            </Label>
+            
+            {variant === 'A' ? (
+              // Variant A: Rounded pill buttons (original)
+              <div className="flex flex-wrap gap-2">
+                {filterOptions.views.map((view) => (
+                  <button 
+                    key={view}
+                    onClick={() => trackFilterInteraction('view', view, !filters.view.includes(view))}
+                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                      filters.view.includes(view) 
+                        ? 'bg-primary/10 text-primary border-primary/40' 
+                        : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    {view}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              // Variant B: Checkbox-like square buttons
+              <div className="flex flex-wrap gap-2">
+                {filterOptions.views.map((view) => (
+                  <button 
+                    key={view}
+                    onClick={() => trackFilterInteraction('view', view, !filters.view.includes(view))}
+                    className={`px-3 py-1.5 rounded-md text-sm flex items-center transition-colors ${
+                      filters.view.includes(view)
+                        ? 'bg-primary text-white'
+                        : 'bg-gray-50 text-gray-700 border border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    {filters.view.includes(view) && (
+                      <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    {view}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           {/* Furnishing Filter */}
           <div>
-            <Label className="font-medium text-gray-700 block mb-2">Furnishing</Label>
-            <div className="flex flex-wrap gap-2">
-              {filterOptions.furnishings.map((furnishing) => (
-                <button 
-                  key={furnishing}
-                  onClick={() => toggleFilter('furnishing', furnishing)}
-                  className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                    filters.furnishing.includes(furnishing) 
-                      ? 'bg-primary/10 text-primary border-primary/40' 
-                      : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                  }`}
-                >
-                  {furnishing}
-                </button>
-              ))}
-            </div>
+            <Label className="font-medium text-gray-700 block mb-2">
+              Furnishing
+              {getActiveCount('furnishing') > 0 && (
+                <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary">
+                  {getActiveCount('furnishing')}
+                </Badge>
+              )}
+            </Label>
+            
+            {variant === 'A' ? (
+              // Variant A: Rounded pill buttons (original)
+              <div className="flex flex-wrap gap-2">
+                {filterOptions.furnishings.map((furnishing) => (
+                  <button 
+                    key={furnishing}
+                    onClick={() => trackFilterInteraction('furnishing', furnishing, !filters.furnishing.includes(furnishing))}
+                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                      filters.furnishing.includes(furnishing) 
+                        ? 'bg-primary/10 text-primary border-primary/40' 
+                        : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    {furnishing}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              // Variant B: Checkbox-like square buttons
+              <div className="flex flex-wrap gap-2">
+                {filterOptions.furnishings.map((furnishing) => (
+                  <button 
+                    key={furnishing}
+                    onClick={() => trackFilterInteraction('furnishing', furnishing, !filters.furnishing.includes(furnishing))}
+                    className={`px-3 py-1.5 rounded-md text-sm flex items-center transition-colors ${
+                      filters.furnishing.includes(furnishing)
+                        ? 'bg-primary text-white'
+                        : 'bg-gray-50 text-gray-700 border border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    {filters.furnishing.includes(furnishing) && (
+                      <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    {furnishing}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         
         {/* Reset Filters Button */}
-        <div className="pt-4">
+        <div className="pt-4 space-y-2">
           <Button 
             onClick={resetFilters} 
             variant="outline"
@@ -349,6 +415,35 @@ export function PropertyFilters({
           >
             <i className="ri-refresh-line mr-2"></i> Reset Filters
           </Button>
+          
+          {/* A/B Testing Controls (For demonstration purposes only - would be removed in production) */}
+          <div className="text-xs text-gray-500 border-t pt-3 mt-3">
+            <p className="mb-2">A/B Testing Controls</p>
+            <div className="flex">
+              <Button 
+                size="sm" 
+                variant={variant === 'A' ? 'default' : 'outline'}
+                className="text-xs rounded-r-none flex-1"
+                onClick={() => {
+                  localStorage.setItem(AB_TEST_KEY, 'A');
+                  setVariant('A');
+                }}
+              >
+                Variant A
+              </Button>
+              <Button 
+                size="sm" 
+                variant={variant === 'B' ? 'default' : 'outline'}
+                className="text-xs rounded-l-none flex-1"
+                onClick={() => {
+                  localStorage.setItem(AB_TEST_KEY, 'B');
+                  setVariant('B');
+                }}
+              >
+                Variant B
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </aside>

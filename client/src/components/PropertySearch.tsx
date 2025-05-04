@@ -341,6 +341,8 @@ export function PropertySearch() {
             isSearching={isSearching}
             hasSearched={searchResults.length > 0}
             resetFilters={resetFilters}
+            filters={filters}
+            filterOptions={filterOptions}
           />
         </div>
       </main>
