@@ -52,13 +52,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bedroomMatch = query.match(/(\d+)[\s-]bed/i);
         const bathroomMatch = query.match(/(\d+)[\s-]bath/i);
         const specificAttributes: Record<string, any> = {};
+        const priceRanges: {min?: number, max?: number, target?: number} = {};
         
+        // Extract bedrooms
         if (bedroomMatch) {
           specificAttributes.bedrooms = parseInt(bedroomMatch[1]);
         }
         
+        // Extract bathrooms
         if (bathroomMatch) {
           specificAttributes.bathrooms = parseInt(bathroomMatch[1]);
+        }
+        
+        // Advanced price matching (handles various formats and phrases)
+        // Match explicit price values with or without symbols (£500k, 500k, 500,000, £500,000, etc.)
+        const priceExactMatches = query.match(/(?:£|\$|€)?(\d[\d,]*(?:\.\d+)?)\s*(?:k|thousand|m|million)?/gi);
+        
+        // Match price range phrases
+        const underPriceMatch = query.match(/(?:under|below|less than|cheaper than|max|maximum)(?:\s+of)?\s+(?:£|\$|€)?(\d[\d,]*(?:\.\d+)?)\s*(?:k|thousand|m|million)?/i);
+        const overPriceMatch = query.match(/(?:over|above|more than|at least|min|minimum)(?:\s+of)?\s+(?:£|\$|€)?(\d[\d,]*(?:\.\d+)?)\s*(?:k|thousand|m|million)?/i);
+        const aroundPriceMatch = query.match(/(?:around|about|approximately|close to|near)(?:\s+a)?(?:\s+price(?:\s+of)?)?\s+(?:£|\$|€)?(\d[\d,]*(?:\.\d+)?)\s*(?:k|thousand|m|million)?/i);
+        
+        // Process price matches
+        if (underPriceMatch) {
+          const priceStr = underPriceMatch[1].replace(/,/g, '');
+          let price = parseFloat(priceStr);
+          // Handle k/thousand and m/million suffixes
+          if (underPriceMatch[0].toLowerCase().includes('k') || underPriceMatch[0].toLowerCase().includes('thousand')) {
+            price *= 1000;
+          } else if (underPriceMatch[0].toLowerCase().includes('m') || underPriceMatch[0].toLowerCase().includes('million')) {
+            price *= 1000000;
+          }
+          priceRanges.max = price;
+        }
+        
+        if (overPriceMatch) {
+          const priceStr = overPriceMatch[1].replace(/,/g, '');
+          let price = parseFloat(priceStr);
+          // Handle k/thousand and m/million suffixes
+          if (overPriceMatch[0].toLowerCase().includes('k') || overPriceMatch[0].toLowerCase().includes('thousand')) {
+            price *= 1000;
+          } else if (overPriceMatch[0].toLowerCase().includes('m') || overPriceMatch[0].toLowerCase().includes('million')) {
+            price *= 1000000;
+          }
+          priceRanges.min = price;
+        }
+        
+        if (aroundPriceMatch) {
+          const priceStr = aroundPriceMatch[1].replace(/,/g, '');
+          let price = parseFloat(priceStr);
+          // Handle k/thousand and m/million suffixes
+          if (aroundPriceMatch[0].toLowerCase().includes('k') || aroundPriceMatch[0].toLowerCase().includes('thousand')) {
+            price *= 1000;
+          } else if (aroundPriceMatch[0].toLowerCase().includes('m') || aroundPriceMatch[0].toLowerCase().includes('million')) {
+            price *= 1000000;
+          }
+          priceRanges.target = price;
+          
+          // For "around" queries, set a range of +/- 20%
+          const range = price * 0.2;
+          priceRanges.min = price - range;
+          priceRanges.max = price + range;
+        }
+        
+        // If we found at least one price range constraint, save it
+        if (Object.keys(priceRanges).length > 0) {
+          specificAttributes.priceRanges = priceRanges;
         }
         
         // Type matching
@@ -108,6 +167,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   matchBoost += 0.2; // Boost score for type match
                 } else {
                   isExactMatch = false;
+                }
+              } else if (attr === 'priceRanges') {
+                // Handle price range filtering
+                const ranges = value as {min?: number, max?: number, target?: number};
+                const price = result.price;
+                
+                if (ranges.min && price < ranges.min) {
+                  // Price is below minimum
+                  isExactMatch = false;
+                } else if (ranges.min && price >= ranges.min) {
+                  // Price is above or equal to minimum (good)
+                  matchBoost += 0.2;
+                }
+                
+                if (ranges.max && price > ranges.max) {
+                  // Price is above maximum
+                  isExactMatch = false;
+                } else if (ranges.max && price <= ranges.max) {
+                  // Price is below or equal to maximum (good)
+                  matchBoost += 0.2;
+                }
+                
+                if (ranges.target) {
+                  // If target is specified, boost score based on how close the price is to the target
+                  const percentDiff = Math.abs(price - ranges.target) / ranges.target;
+                  if (percentDiff <= 0.05) { // Within 5% of target
+                    matchBoost += 0.35;
+                  } else if (percentDiff <= 0.1) { // Within 10% of target
+                    matchBoost += 0.25;
+                  } else if (percentDiff <= 0.2) { // Within 20% of target
+                    matchBoost += 0.15;
+                  } else {
+                    isExactMatch = false;
+                  }
                 }
               } else if (result[attr] === value) {
                 matchBoost += 0.3; // Boost score for exact match (bedrooms, bathrooms)
