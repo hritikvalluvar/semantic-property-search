@@ -56,15 +56,25 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
+  // ALWAYS serve the app on port 5000 for Replit deployment
   // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  // It is the only port that is not firewalled in Replit.
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+  
+  // Create an immediate health check response for deployment
+  // This helps with Replit deployment which times out if the server doesn't
+  // respond quickly enough to health checks
+  app.get('/api/healthcheck', (req, res) => {
+    res.status(200).json({ status: 'ok', message: 'Server is running' });
+  });
+  
+  server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
+    
+    // Log that we're ready for Replit's deployment health checks
+    console.log(`\n=== DEPLOYMENT READY ===`);
+    console.log(`Server is listening on port ${port} and ready for health checks`);
+    console.log(`Health check endpoint: http://localhost:${port}/api/healthcheck`);
+    console.log(`======================================\n`);
   });
 })();

@@ -12,8 +12,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API routes for property search
   const apiRouter = express.Router();
   
-  // Initialize data
-  await storage.loadPropertyDataFromCSV();
+  // Create HTTP server first so it can start accepting connections quickly and pass health checks
+  const server = createServer(app);
+  
+  // Initialize data in the background without blocking server startup
+  // This allows the server to respond to health checks immediately
+  setTimeout(async () => {
+    try {
+      await storage.loadPropertyDataFromCSV();
+      console.log("CSV data loaded successfully");
+    } catch (error) {
+      console.error("Error loading CSV data:", error);
+    }
+  }, 100);
   
   // Get filter options
   apiRouter.get("/property/filters", async (req: Request, res: Response) => {
@@ -473,12 +484,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create a basic health check endpoint for Replit
+  apiRouter.get("/healthcheck", (req: Request, res: Response) => {
+    res.status(200).json({ status: 'ok', message: 'Server is running' });
+  });
+
   // Serve generated images statically
   app.use("/generated-images", express.static("client/public/generated-images"));
 
   // Use the API router with prefix
   app.use("/api", apiRouter);
 
-  const httpServer = createServer(app);
-  return httpServer;
+  // Return the HTTP server that was created at the beginning of this function
+  return server;
 }
